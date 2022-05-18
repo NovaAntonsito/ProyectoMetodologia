@@ -31,7 +31,7 @@ def main():
     pantalla = p.display.set_mode((ANCHO, ALTO))
     reloj = p.time.Clock()
     pantalla.fill(p.Color(255, 255, 255))
-    EstadoJuego = Engine.EstadoJuego()
+    estadoJuego = Engine.EstadoJuego()
     cargarImagenes()
     p.display.set_caption("Chess LinuxIsMyPassion")
     logo = p.image.load("imagenes/logo.png")
@@ -48,11 +48,20 @@ def main():
                 posicion = p.mouse.get_pos()  # posicion (x,y)
                 col = posicion[0] // SQ_SIZE
                 fil = posicion[1] // SQ_SIZE
-                if posicionAnterior == (col, fil):
+                if posicionAnterior == (fil, col):
                     posicionAnterior = ()
                     clicksJugador = []
-                posicionAnterior = (fil, col)
-        dibujarEstado(pantalla, EstadoJuego)
+                else:
+                    posicionAnterior = (fil, col)
+                    clicksJugador.append(posicionAnterior)
+                if len(clicksJugador) == 2:
+                    mover = Engine.Mover(clicksJugador[0], clicksJugador[1], estadoJuego.tablero)
+                    print(mover.getNotacionAjedrez())
+                    estadoJuego.hacerMovimiento(mover)
+                    posicionAnterior = ()
+                    clicksJugador = []
+
+        dibujarEstado(pantalla, estadoJuego)
         reloj.tick(MAX_FPS)
         p.display.flip()
 
@@ -92,12 +101,12 @@ Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
 
 
-def dibujarEstado(pantalla, EstadoJuego):
+def dibujarEstado(pantalla, estadoJuego):
     # Dibuja el tablero
     dibujarTablero(pantalla)
     # Previsualización posibles direcciones(Luego)
 
-    dibujarPiezas(pantalla, EstadoJuego.tablero)
+    dibujarPiezas(pantalla, estadoJuego.tablero)
     # Dibujando piezas en los casilleros de los extremos
 
 
