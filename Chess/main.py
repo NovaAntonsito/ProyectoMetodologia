@@ -33,7 +33,7 @@ def main():
     pantalla.fill(p.Color(255, 255, 255))
     EstadoJuego = Engine.EstadoJuego()
     cargarImagenes()
-    p.display.set_caption("Chess RODRIGUEZ")
+    p.display.set_caption("Chess Python")
     logo = p.image.load("imagenes/logo.png")
     p.display.set_icon(logo)
 
