@@ -45,7 +45,7 @@ def main():
             if e.type == p.QUIT:
                 ejecutando = False
             elif e.type == p.MOUSEBUTTONDOWN:
-                posicion = p.mouse.get_pos()#posicion (x,y)
+                posicion = p.mouse.get_pos()  # posicion (x,y)
                 col = posicion[0] // SQ_SIZE
                 fil = posicion[1] // SQ_SIZE
                 if posicionAnterior == (col, fil):
@@ -55,7 +55,6 @@ def main():
         dibujarEstado(pantalla, EstadoJuego)
         reloj.tick(MAX_FPS)
         p.display.flip()
-
 
 '''
 Dibuja las casillas del tablero
