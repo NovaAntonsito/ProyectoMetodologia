@@ -42,23 +42,38 @@ class EstadoJuego:
     def traerMovimietosValidos(self):
         return self.traerTodosMovimientosPosibles()
 
+
+
     '''
     MOVIMIENTOS
     '''
 
     def traerTodosMovimientosPosibles(self):
         movimientos = []
+        if (self.movimientoBlanca):
+            print("Turno blanca")
+        else:
+            print("Turno negra")
         for f in range(len(self.tablero)):
             for c in range(len(self.tablero[f])):
                 turno = self.tablero[f][c][0]
                 if (turno == 'b' and self.movimientoBlanca) or (
                         turno == "n" and not self.movimientoBlanca):
-                    print(self.movimientoBlanca)
+
                     pieza = self.tablero[f][c][1]
                     if pieza == 'P':
                         self.getMovimientoPeon(f, c, movimientos)
                     elif pieza == 'T':
                         self.getMovimientoTorre(f, c, movimientos)
+                    elif pieza == 'A':
+                        self.getMovimientosAlfil(f, c, movimientos)
+                    elif pieza == 'C':
+                        self.getMovimientoCaballo(f, c, movimientos)
+                    elif pieza == 'Q':
+                        self.getMovimientoQueen(f, c, movimientos)
+                    elif pieza == 'R':
+                        self.getMovimientoRey(f, c, movimientos)
+
         return movimientos
 
     '''
@@ -66,7 +81,6 @@ class EstadoJuego:
     '''
 
     def getMovimientoPeon(self, f, c, movimientos):
-        print("getMovimientoPeon", self.movimientoBlanca)
         if self.movimientoBlanca:
             if self.tablero[f - 1][c] == "--":
                 movimientos.append(Mover((f, c), (f - 1, c), self.tablero))
@@ -79,18 +93,109 @@ class EstadoJuego:
                 if self.tablero[f - 1][c + 1][0] == 'n':
                     movimientos.append(Mover((f, c), (f - 1, c + 1), self.tablero))
         else:
-            print("Entre aca=>", f, c)
             if self.tablero[f + 1][c] == "--":
                 movimientos.append(Mover((f, c), (f + 1, c), self.tablero))
                 if f == 1 and self.tablero[f + 2][c] == "--":
                     movimientos.append(Mover((f, c), (f + 2, c), self.tablero))
+                if c - 1 >= 0:
+                    if self.tablero[f + 1][c - 1][0] == 'b':
+                        movimientos.append(Mover((f, c), (f + 1, c - 1), self.tablero))
+                if c + 1 <= 7:
+                    if self.tablero[f + 1][c + 1][0] == 'b':
+                        movimientos.append(Mover((f, c), (f + 1, c + 1), self.tablero))
+
+
 
     ''' 
     obtener todos los movimentos por la torre selecionada
     '''
 
     def getMovimientoTorre(self, f, c, moves):
-        pass
+        dirreciones = ((-1,0),(0,-1),(1,0),(0,1))
+        colorEnemigo = 'n' if self.movimientoBlanca else 'b'
+
+        for d in dirreciones:
+            for i in range(1,8):
+                finalFil  = f + d[0] * i
+                finalCol= c + d[1] * i
+
+                if 0 <= finalFil < 8 and 0 <= finalCol < 8:
+                    finalPieza = self.tablero[finalFil][finalCol]
+                    if finalPieza == "--":
+                        moves.append(Mover((f,c), (finalFil,finalCol), self.tablero))
+                    elif finalPieza[0]== colorEnemigo:
+                        moves.append(Mover((f,c),(finalFil,finalCol), self.tablero))
+                        break
+                    else:
+                        break
+                else:
+                    break
+
+    def getMovimientosAlfil(self, f,c,moves):
+        dirreciones = ((-1,-1), (1, 1), (-1, 1), (-1, 1))
+        colorEnemigo = 'n' if self.movimientoBlanca else 'b'
+
+        for d in dirreciones:
+            for i in range(1, 8):
+                finalFil = f + d[0] * i
+                finalCol = c + d[1] * i
+                if 0 <= finalFil < 8 and 0 <= finalCol < 8:
+                    finalPieza = self.tablero[finalFil][finalCol]
+                    if finalPieza == "--":
+                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                    elif finalPieza[0] == colorEnemigo:
+                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                        break
+                    else:
+                        break
+                else:
+                    break
+
+    def getMovimientoCaballo(self,f,c,moves):
+        dirreciones = ((-2, 1), (-2, -1), (2, 1), (2, -1),(1, -2), (1, 2), (-1, -2), (-1, 2))
+        colorAliado = 'b' if self.movimientoBlanca else 'n'
+
+        for d in dirreciones:
+                finalFil = f + d[0]
+                finalCol = c + d[1]
+                if 0 <= finalFil < 8 and 0 <= finalCol < 8:
+                    finalPieza = self.tablero[finalFil][finalCol]
+                    if finalPieza[0] != colorAliado:
+                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+
+
+    def getMovimientoQueen(self, f,c,moves):
+        dirreciones = ((-1, -1), (1, 1), (-1, 1), (-1, 1),(-1, 0), (0, -1), (1, 0), (0, 1))
+        colorEnemigo = 'n' if self.movimientoBlanca else 'b'
+        for d in dirreciones:
+            for i in range(1, 8):
+                finalFil = f + d[0] * i
+                finalCol = c + d[1] * i
+
+                if 0 <= finalFil < 8 and 0 <= finalCol < 8:
+                    finalPieza = self.tablero[finalFil][finalCol]
+                    if finalPieza == "--":
+                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                    elif finalPieza[0] == colorEnemigo:
+                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                        break
+                    else:
+                        break
+                else:
+                    break
+
+    def getMovimientoRey(self,f,c,moves):
+        dirreciones = ((-1, -1), (1, 1), (-1, 1), (-1, 1),(-1, 0), (0, -1), (1, 0), (0, 1))
+        colorAliado = 'b' if self.movimientoBlanca else 'n'
+        for d in dirreciones:
+            finalFil = f + d[0]
+            finalCol = c + d[1]
+            if 0 <= finalFil < 8 and 0 <= finalCol < 8:
+                finalPieza = self.tablero[finalFil][finalCol]
+                if finalPieza[0] != colorAliado:
+                    moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+
+
 
 
 # Lista de movimientos separados
