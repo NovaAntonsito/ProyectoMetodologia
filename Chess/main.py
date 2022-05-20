@@ -46,7 +46,7 @@ def main():
     estadoJuego = Engine.EstadoJuego()
     movimientosValidos = estadoJuego.traerMovimietosValidos()
     movRealizado = False
-    p.display.set_caption("Ajedrez Grupo H")
+    p.display.set_caption("Chess LinuxIsMyPassion")
     logo = p.image.load("imagenes/logo.png")
     p.display.set_icon(logo)
     cargarImagenes()
@@ -74,10 +74,6 @@ def main():
                     if mover in movimientosValidos:
                         estadoJuego.hacerMovimiento(mover)
                         movRealizado = True
-                        posicionAnterior=()
-                        clicksJugador=[]
-                    else:
-                        clicksJugador=[posicionAnterior]
                     posicionAnterior = ()
                     clicksJugador = []
             elif e.type == p.KEYDOWN:
