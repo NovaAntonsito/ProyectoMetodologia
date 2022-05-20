@@ -15,11 +15,26 @@ class EstadoJuego:
         self.movimientoBlanca = True
         self.registroMov = []
 
+    '''
+    Toma un movimiento como parametro y lo ejecuta
+    '''
+
     def hacerMovimiento(self, mover):
-        self.tablero[mover.filaInical][mover.columnaInicial] = "--"
+        self.tablero[mover.filaInicial][mover.columnaInicial] = "--"
         self.tablero[mover.filaFinal][mover.columnaFinal] = mover.piezaMovida
         self.registroMov.append(mover)  # registramos el movimiento
         self.movimientoBlanca = not self.movimientoBlanca  # cambio de turno
+
+    '''
+    Rehacer el ultimo movimiento
+    '''
+
+    def movAnterior(self):
+        if len(self.registroMov) != 0:
+            movimiento = self.registroMov.pop()
+            self.tablero[movimiento.filaInicial][movimiento.columnaInicial] = movimiento.piezaMovida
+            self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaCapturada
+            self.movimientoBlanca = not self.movimientoBlanca
 
 
 # Lista de movimientos separados
@@ -32,17 +47,17 @@ class Mover:
 
     columnasFilas = {v: k for k, v in filasColumnas.items()}
 
-    def __init__(self, casInical, casFinal, tablero):
-        self.filaInical = casInical[0]
-        self.columnaInicial = casInical[1]
+    def __init__(self, casInicial, casFinal, tablero):
+        self.filaInicial = casInicial[0]
+        self.columnaInicial = casInicial[1]
         self.filaFinal = casFinal[0]
         self.columnaFinal = casFinal[1]
-        self.piezaMovida = tablero[self.filaInical][self.columnaInicial]
+        self.piezaMovida = tablero[self.filaInicial][self.columnaInicial]
         self.piezaCapturada = tablero[self.filaFinal][self.columnaFinal]
 
     def getNotacionAjedrez(self):
-        return self.getRangoFila(self.filaInical, self.columnaInicial) + self.getRangoFila(self.filaFinal,
-                                                                                           self.columnaFinal)
+        return self.getRangoFila(self.filaInicial, self.columnaInicial) + self.getRangoFila(self.filaFinal,
+                                                                                            self.columnaFinal)
 
     def getRangoFila(self, f, c):
         return self.columnasFilas[c] + self.filasRangos[f]

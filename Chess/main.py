@@ -1,5 +1,6 @@
 import pygame as p
-from Chess import Engine
+import Engine  
+
 
 # Settings iniciales para PYGAME
 p.init()
@@ -60,16 +61,20 @@ def main():
                     estadoJuego.hacerMovimiento(mover)
                     posicionAnterior = ()
                     clicksJugador = []
+            elif e.type == p.KEYDOWN:
+                if e.key == p.K_z: #z esta presionada
+                    estadoJuego.movAnterior()
+
+
 
         dibujarEstado(pantalla, estadoJuego)
         reloj.tick(MAX_FPS)
         p.display.flip()
 
+
 '''
 Dibuja las casillas del tablero
 '''
-
-
 def dibujarTablero(pantalla):
     color1 = p.Color("#C5742A")
     color2 = p.Color("#EBCCAA")
@@ -86,8 +91,6 @@ def dibujarTablero(pantalla):
 '''
 Dibuja las piezas en el tablero utilizando el estado actual => Estado de juego
 '''
-
-
 def dibujarPiezas(pantalla, tablero):
     for f in range(DIMENSION):
         for c in range(DIMENSION):
@@ -99,8 +102,6 @@ def dibujarPiezas(pantalla, tablero):
 '''
 Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
-
-
 def dibujarEstado(pantalla, estadoJuego):
     # Dibuja el tablero
     dibujarTablero(pantalla)
