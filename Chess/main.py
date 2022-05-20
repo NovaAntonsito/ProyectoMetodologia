@@ -46,7 +46,6 @@ def main():
     estadoJuego = Engine.EstadoJuego()
     movimientosValidos = estadoJuego.traerMovimietosValidos()
     movRealizado = False
-    p.display.set_caption("Ajedrez Grupo H")
     logo = p.image.load("imagenes/logo.png")
     p.display.set_icon(logo)
     cargarImagenes()
@@ -78,8 +77,7 @@ def main():
                         clicksJugador=[]
                     else:
                         clicksJugador=[posicionAnterior]
-                    posicionAnterior = ()
-                    clicksJugador = []
+                        posicionAnterior = ()
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:  # z esta presionada
                     estadoJuego.movAnterior()
@@ -98,7 +96,8 @@ def main():
 Dibuja las casillas del tablero
 '''
 
-
+#pantalla, array[]
+#d1,d2
 def dibujarTablero(pantalla):
     color1 = p.Color("#C5742A")
     color2 = p.Color("#EBCCAA")
@@ -138,6 +137,12 @@ def dibujarEstado(pantalla, estadoJuego):
     # Previsualización posibles direcciones(Luego)
 
     dibujarPiezas(pantalla, estadoJuego.tablero)
+    if (estadoJuego.movimientoBlanca):
+        p.display.set_caption("Ajedrez Grupo H ---- Turno Blanca")
+        p.display.update()
+    else:
+        p.display.update()
+        p.display.set_caption("Ajedrez Grupo H ---- Turno Negra")
 
     # Dibujando piezas en los casilleros de los extremos
 

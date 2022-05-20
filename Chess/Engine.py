@@ -17,7 +17,11 @@ class EstadoJuego:
             ["bT", "bC", "bA", "bQ", "bR", "bA", "bC", "bT"]]
         self.movimientoBlanca = True
         self.registroMov = []
-
+        #Lectura de jaques mate
+        self.ubicacionReyNegro  = (7,4)
+        self.ubicacionReyBlanco = (0,4)
+        self.jaquemate = False
+        self.jaque = False
     '''
     Toma un movimiento como parametro y lo ejecuta
     '''
@@ -27,6 +31,11 @@ class EstadoJuego:
         self.tablero[mover.filaFinal][mover.columnaFinal] = mover.piezaMovida
         self.registroMov.append(mover)  # registramos el movimiento
         self.movimientoBlanca = not self.movimientoBlanca  # cambio de turno
+        #Cambiar la pos del rey
+        if mover.piezaMovida == 'bR':
+            self.ubicacionReyBlanco = (mover.filaFinal.mover.columnaFinal)
+        elif mover.piezaMovida == 'nR':
+            self.ubicacionReyNegro = (mover.filaFinal.mover.columnaFinal)
 
     '''
     Rehacer el ultimo movimiento
@@ -50,10 +59,7 @@ class EstadoJuego:
 
     def traerTodosMovimientosPosibles(self):
         movimientos = []
-        if (self.movimientoBlanca):
-            print("Turno blanca")
-        else:
-            print("Turno negra")
+
         for f in range(len(self.tablero)):
             for c in range(len(self.tablero[f])):
                 turno = self.tablero[f][c][0]
