@@ -3,7 +3,7 @@ import random
 
 class EstadoJuego:
     def __init__(self):
-        # el talblero es un array de 8x8, donde cada elemento tiene dos caracteres.
+        # el tablero es un array de 8x8, donde cada elemento tiene dos caracteres.
         # el primero refiere al color n(negro) y b(blanco)
         # el segundo refiere a la pieza que representa en el ajerez.
         self.tablero = [
@@ -110,7 +110,7 @@ class EstadoJuego:
                     if self.tablero[f + 1][c + 1][0] == 'b':
                         movimientos.append(Mover((f, c), (f + 1, c + 1), self.tablero))
 
-
+  #Determinar todos los movimientos y los jaques
 
     ''' 
     obtener todos los movimentos por la torre selecionada
@@ -202,8 +202,7 @@ class EstadoJuego:
                     moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
 
 
-
-
+   #Subfuncion para determinar en que cuadrado el rey no es encuentra bajo ataque
 # Lista de movimientos separados
 class Mover:
     rangosFilas = {"1": 7, "2": 6, "3": 5, "4": 4,
