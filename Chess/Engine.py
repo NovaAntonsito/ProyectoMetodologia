@@ -3,7 +3,7 @@ import random
 
 class EstadoJuego:
     def __init__(self):
-        # el tablero es un array de 8x8, donde cada elemento tiene dos caracteres.
+        # el talblero es un array de 8x8, donde cada elemento tiene dos caracteres.
         # el primero refiere al color n(negro) y b(blanco)
         # el segundo refiere a la pieza que representa en el ajerez.
         self.tablero = [
@@ -18,10 +18,12 @@ class EstadoJuego:
         self.movimientoBlanca = True
         self.registroMov = []
         #Lectura de jaques mate
-        self.ubicacionReyNegro  = (7,4)
-        self.ubicacionReyBlanco = (0,4)
-        self.jaquemate = False
-        self.jaque = False
+        self.ubicacionReyBlanco = (0, 4)
+        self.ubicacionReyNegro = (7, 4)
+        self.JaqueMate = False
+        self.Empate = False
+
+
     '''
     Toma un movimiento como parametro y lo ejecuta
     '''
@@ -32,10 +34,13 @@ class EstadoJuego:
         self.registroMov.append(mover)  # registramos el movimiento
         self.movimientoBlanca = not self.movimientoBlanca  # cambio de turno
         #Cambiar la pos del rey
-        if mover.piezaMovida == 'bR':
-            self.ubicacionReyBlanco = (mover.filaFinal.mover.columnaFinal)
-        elif mover.piezaMovida == 'nR':
-            self.ubicacionReyNegro = (mover.filaFinal.mover.columnaFinal)
+        if mover.piezaMovida == "bR":
+            self.ubicacionReyBlanco = (mover.filaFinal, mover.columnaFinal)
+        elif mover.piezaMovida == "nR":
+            self.ubicacionReyNegro = (mover.filaFinal, mover.columnaFinal)
+
+
+
 
     '''
     Rehacer el ultimo movimiento
@@ -47,9 +52,55 @@ class EstadoJuego:
             self.tablero[movimiento.filaInicial][movimiento.columnaInicial] = movimiento.piezaMovida
             self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaCapturada
             self.movimientoBlanca = not self.movimientoBlanca
+            if movimiento.piezaMovida == "bR":
+                self.ubicacionReyBlanco = (movimiento.filaInicial, movimiento.columnaInicial)
+            elif movimiento.piezaMovida == "nR":
+                self.ubicacionReyNegro = (movimiento.filaInicial, movimiento.columnaInicial)
+
 
     def traerMovimietosValidos(self):
-        return self.traerTodosMovimientosPosibles()
+        movimientos = self.traerTodosMovimientosPosibles()
+        for i in range(len(movimientos)-1,-1,-1):
+            self.hacerMovimiento(movimientos[i])
+            self.movimientoBlanca = not self.movimientoBlanca
+            if self.enJaque():
+                movimientos.remove(movimientos[i])
+            self.movimientoBlanca = not self.movimientoBlanca
+            self.movAnterior()
+        if len(movimientos) == 0:
+            if self.enJaque():
+                self.JaqueMate = True
+            else:
+                self.Empate = True
+        else:
+            self.JaqueMate = False
+            self.Empate = False
+        return movimientos
+
+
+    #Determinar si el jugador esta en jaque
+    def enJaque(self):
+        if self.movimientoBlanca:
+            return self.cuadradoBajoAtaque(self.ubicacionReyBlanco[0], self.ubicacionReyBlanco[1])
+        else:
+            return self.cuadradoBajoAtaque(self.ubicacionReyNegro[0], self.ubicacionReyNegro[1])
+
+
+
+
+
+    def cuadradoBajoAtaque(self,r,c):
+        self.movimientoBlanca = not self.movimientoBlanca
+        movEnemigo = self.traerTodosMovimientosPosibles()
+        self.movimientoBlanca = not self.movimientoBlanca
+        for move in movEnemigo:
+            if move.filaFinal == r and move.columnaFinal == c:
+                self.movimientoBlanca = not self.movimientoBlanca
+                return True
+        return False
+
+
+
 
 
 
@@ -59,7 +110,6 @@ class EstadoJuego:
 
     def traerTodosMovimientosPosibles(self):
         movimientos = []
-
         for f in range(len(self.tablero)):
             for c in range(len(self.tablero[f])):
                 turno = self.tablero[f][c][0]
@@ -110,7 +160,7 @@ class EstadoJuego:
                     if self.tablero[f + 1][c + 1][0] == 'b':
                         movimientos.append(Mover((f, c), (f + 1, c + 1), self.tablero))
 
-  #Determinar todos los movimientos y los jaques
+
 
     ''' 
     obtener todos los movimentos por la torre selecionada
@@ -202,7 +252,9 @@ class EstadoJuego:
                     moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
 
 
-   #Subfuncion para determinar en que cuadrado el rey no es encuentra bajo ataque
+
+
+
 # Lista de movimientos separados
 class Mover:
     rangosFilas = {"1": 7, "2": 6, "3": 5, "4": 4,
@@ -233,3 +285,4 @@ class Mover:
 
     def getRangoFila(self, f, c):
         return self.columnasFilas[c] + self.filasRangos[f]
+
