@@ -1,4 +1,4 @@
-import random
+
 
 
 class EstadoJuego:
@@ -23,6 +23,10 @@ class EstadoJuego:
         self.JaqueMate = False
         self.Empate = False
 
+        '''self.enJaque = False
+        self.Clavada = []
+        self.Jaques = []
+        '''
 
     '''
     Toma un movimiento como parametro y lo ejecuta
@@ -60,21 +64,41 @@ class EstadoJuego:
 
     def traerMovimietosValidos(self):
         movimientos = self.traerTodosMovimientosPosibles()
-        for i in range(len(movimientos)-1,-1,-1):
-            self.hacerMovimiento(movimientos[i])
-            self.movimientoBlanca = not self.movimientoBlanca
-            if self.enJaque():
-                movimientos.remove(movimientos[i])
-            self.movimientoBlanca = not self.movimientoBlanca
-            self.movAnterior()
-        if len(movimientos) == 0:
-            if self.enJaque():
-                self.JaqueMate = True
-            else:
-                self.Empate = True
+        '''movimientos = []
+        self.enJaque, self.Clavada, self.Jaques = self.ValidarClavadasyJaques()
+        if self.movimientoBlanca:
+            ReyFila = self.ubicacionReyBlanco[0]
+            ReyCol = self.ubicacionReyBlanco[1]
         else:
-            self.JaqueMate = False
-            self.Empate = False
+            ReyFila = self.ubicacionReyNegro[0]
+            ReyCol = self.ubicacionReyNegro[1]
+        if self.enJaque:
+            if len(self.Jaques) == 1: #Solo 1 Jaque, jaque bloqueado o movimiento de rey
+                movimientos = self.traerTodosMovimientosPosibles()
+                #Para bloquear un jaque debes de mover una pieza en una entre medio de los cuadrados de la pieza del enemigo y el rey
+                Jaque= self.Jaques[0] #informacion del Jaque
+                ValidarFil = Jaque[0]
+                ValidarCol = Jaque[1]
+            ValidandoPieza = self.tablero[ValidarFil][ValidarCol] #Pieza enemiga causando el Jaque
+            CuadradosDisponibles = [] #Cuadrados que la pieza pueda mover
+
+            if ValidandoPieza[1]== 'N':
+                CuadradosDisponibles = [(ValidarFil, ValidarCol)]
+            else:
+                for i in range(1,8):
+                    CuadradoDisponible = (ReyFila + Jaque[2] * i, ReyCol + Jaque[3] * i) #Jaque[2] y Jaque[3] son las direcciones del Jaque
+                    CuadradosDisponibles.append(CuadradoDisponible)
+                    if CuadradoDisponible[0] == ValidarFil and CuadradoDisponible[1] == ValidarCol:
+                        break
+
+            for i in range(len(movimientos) - 1, -1, -1):
+                if movimientos[i].PiezaMovida[1] != 'K':
+                    if not (movimientos[i].TerminarFila, movimientos[i].TerminarCol) in CuadradosDisponibles:
+                        movimientos.remove(movimientos[i])
+        else:
+            self.getMovimientoRey(ReyFila, ReyCol, movimientos)
+'''
+
         return movimientos
 
 
