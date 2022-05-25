@@ -15,8 +15,8 @@ class EstadoJuego:
         self.movimientoBlanca = True
         self.registroMov = []
         # Lectura de jaques mate
-        self.ubicacionReyBlanco = (0, 4)
-        self.ubicacionReyNegro = (7, 4)
+        self.ubicacionReyBlanco = (7, 4)
+        self.ubicacionReyNegro = (0, 4)
         self.enJaque = False
         self.clavadas = []
         self.posiblesJaques = []
@@ -60,6 +60,7 @@ class EstadoJuego:
         else:
             filaRey = self.ubicacionReyNegro[0]
             colRey = self.ubicacionReyNegro[1]
+
         if self.enJaque:
             if len(self.posiblesJaques) == 1:  # Solo 1 Jaque, jaque bloqueado o movimiento de rey
                 movimientos = self.traerTodosMovimientosPosibles()
@@ -82,14 +83,14 @@ class EstadoJuego:
                             break
 
                 for i in range(len(movimientos) - 1, -1, -1):
+
                     if movimientos[i].piezaMovida[1] != 'R':
                         if not (movimientos[i].filaFinal, movimientos[i].columnaFinal) in cuadradosValidos:
                             movimientos.remove(movimientos[i])
             else:
                 self.getMovimientoRey(filaRey, colRey, movimientos)
         else:
-            self.traerMovimietosValidos()
-
+           movimientos=self.traerTodosMovimientosPosibles()
         return movimientos
 
     # Determinar si el jugador esta en jaque
@@ -152,7 +153,6 @@ class EstadoJuego:
 
         if self.movimientoBlanca:
             if self.tablero[f - 1][c] == "--":
-                movimientos.append(Mover((f, c), (f - 1, c), self.tablero))
                 if not piezaClavada or direccionClavada == (-1, 0):
                     movimientos.append(Mover((f, c), (f - 1, c), self.tablero))
                     if f == 6 and self.tablero[f - 2][c] == "--":
@@ -212,10 +212,18 @@ class EstadoJuego:
                             break
                         else:
                             break
-                    else:
-                        break
+                else:
+                    break
 
     def getMovimientosAlfil(self, f, c, moves):
+        piezaClavada = False
+        direccionClavada = ()
+        for i in range(len(self.clavadas) - 1, -1, -1):
+            if self.clavadas[i][0] == f and self.clavadas[i][1] == c:
+                piezaClavada = True
+                direccionClavada = (self.clavadas[i][2], self.clavadas[i][3])
+                self.clavadas.remove(self.clavadas[i])
+                break
         direcciones = ((-1, -1), (1, 1), (-1, 1), (-1, 1))
         colorEnemigo = 'n' if self.movimientoBlanca else 'b'
 
@@ -224,14 +232,15 @@ class EstadoJuego:
                 finalFil = f + d[0] * i
                 finalCol = c + d[1] * i
                 if 0 <= finalFil < 8 and 0 <= finalCol < 8:
-                    finalPieza = self.tablero[finalFil][finalCol]
-                    if finalPieza == "--":
-                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
-                    elif finalPieza[0] == colorEnemigo:
-                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
-                        break
-                    else:
-                        break
+                    if not piezaClavada or direccionClavada == d or piezaClavada == (-d[0], -d[1]):
+                        finalPieza = self.tablero[finalFil][finalCol]
+                        if finalPieza == "--":
+                            moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                        elif finalPieza[0] == colorEnemigo:
+                            moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                            break
+                        else:
+                            break
                 else:
                     break
 
@@ -241,7 +250,6 @@ class EstadoJuego:
         for i in range(len(self.clavadas) - 1, -1, -1):
             if self.clavadas[i][0] == f and self.clavadas[i][1] == c:
                 piezaClavada = True
-                direccionClavada = (self.clavadas[i][2], self.clavadas[i][3])
                 self.clavadas.remove(self.clavadas[i])
                 break
         direcciones = ((-2, 1), (-2, -1), (2, 1), (2, -1), (1, -2), (1, 2), (-1, -2), (-1, 2))
@@ -251,9 +259,10 @@ class EstadoJuego:
             finalFil = f + d[0]
             finalCol = c + d[1]
             if 0 <= finalFil < 8 and 0 <= finalCol < 8:
-                finalPieza = self.tablero[finalFil][finalCol]
-                if finalPieza[0] != colorAliado:
-                    moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                if not piezaClavada:
+                    finalPieza = self.tablero[finalFil][finalCol]
+                    if finalPieza[0] != colorAliado:
+                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
 
     def getMovimientoQueen(self, f, c, moves):
         direcciones = ((-1, -1), (1, 1), (-1, 1), (-1, 1), (-1, 0), (0, -1), (1, 0), (0, 1))
@@ -276,15 +285,27 @@ class EstadoJuego:
                     break
 
     def getMovimientoRey(self, f, c, moves):
+        movimientoFilas = (-1, -1, -1, 0, 0, 1, 1, 1)
+        movimientoColumnas = (-1, 0, 1, -1, 1, -1, 0, 1)
         direcciones = ((-1, -1), (1, 1), (-1, 1), (-1, 1), (-1, 0), (0, -1), (1, 0), (0, 1))
         colorAliado = 'b' if self.movimientoBlanca else 'n'
-        for d in direcciones:
-            finalFil = f + d[0]
-            finalCol = c + d[1]
+        for i in range(8):
+            finalFil = f + movimientoFilas[0]
+            finalCol = c + movimientoColumnas[1]
             if 0 <= finalFil < 8 and 0 <= finalCol < 8:
                 finalPieza = self.tablero[finalFil][finalCol]
                 if finalPieza[0] != colorAliado:
-                    moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                    if colorAliado == 'b':
+                        self.ubicacionReyBlanco = (finalFil, finalCol)
+                    else:
+                        self.ubicacionReyNegro = (finalFil, finalCol)
+                    enJaque, clavadas, posiblesJaques = self.validarClavadayJaques()
+                    if not enJaque:
+                        moves.append(Mover((f, c), (finalFil, finalCol), self.tablero))
+                    if colorAliado == 'b':
+                        self.ubicacionReyBlanco = (f, c)
+                    else:
+                        self.ubicacionReyNegro = (f, c)
 
     def validarClavadayJaques(self):
         clavadas = []
@@ -298,8 +319,8 @@ class EstadoJuego:
         else:
             colorEnemigo = "b"
             colorAliado = "n"
-            filaInicial = self.ubicacionReyBlanco[0]
-            colInicial = self.ubicacionReyBlanco[1]
+            filaInicial = self.ubicacionReyNegro[0]
+            colInicial = self.ubicacionReyNegro[1]
         direcciones = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
         for j in range(len(direcciones)):
             d = direcciones[j]
@@ -309,7 +330,7 @@ class EstadoJuego:
                 colFinal = colInicial + d[1] * i
                 if 0 <= filaFinal < 8 and 0 <= colFinal < 8:
                     piezaFinal = self.tablero[filaFinal][colFinal]
-                    if piezaFinal[0] == colorAliado:
+                    if piezaFinal[0] == colorAliado and piezaFinal[1] != 'K':
                         if posibleClavada == ():
                             posibleClavada = (filaFinal, colFinal, d[0], d[1])
                         else:
@@ -321,11 +342,10 @@ class EstadoJuego:
                         # 1 cuadrado en diagonal para los peones
                         # cualquier direccion para la reina
                         # cualquier direccion pero solo a un bloque de distancia para los reyes
-                        if (0 <= j <= 3 and tipo == 'T') or \
-                                (4 <= j <= 7 and tipo == 'A') or \
-                                (i == 1 and tipo == 'P' and ((colorEnemigo == 'b' and 6 <= j <= 7) or (
-                                        colorEnemigo == 'n' and 4 <= j <= 5))) or \
-                                (tipo == 'Q') or (i == 1 and tipo == 'R'):
+                        if (0 <= j <= 3 and tipo == 'T') or (4 <= j <= 7 and tipo == 'A') or (
+                                i == 1 and tipo == 'P' and (
+                                (colorEnemigo == 'b' and 6 <= j <= 7) or (colorEnemigo == 'n' and 4 <= j <= 5))) or (
+                                tipo == 'Q') or (i == 1 and tipo == 'R'):
                             if posibleClavada == ():
                                 enJaque = True
                                 posiblesJaques.append((filaFinal, colFinal, d[0], d[1]))
@@ -335,6 +355,9 @@ class EstadoJuego:
                                 break
                         else:
                             break
+                else:
+                    break
+
         movimientosCaballo = ((-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1))
         for m in movimientosCaballo:
             filaFinal = filaInicial + m[0]

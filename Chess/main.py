@@ -78,6 +78,7 @@ def main():
                     else:
                         clicksJugador=[posicionAnterior]
                         posicionAnterior = ()
+
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:  # z esta presionada
                     estadoJuego.movAnterior()
