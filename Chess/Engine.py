@@ -486,13 +486,21 @@ class Mover:
 
     columnasFilas = {v: k for k, v in filasColumnas.items()}
 
-    def __init__(self, casInicial, casFinal, tablero):
+    def __init__(self, casInicial, casFinal, tablero, movimientoCapturaAlPaso=False, movimientoEnroque=False):
         self.filaInicial = casInicial[0]
         self.columnaInicial = casInicial[1]
         self.filaFinal = casFinal[0]
         self.columnaFinal = casFinal[1]
         self.piezaMovida = tablero[self.filaInicial][self.columnaInicial]
         self.piezaCapturada = tablero[self.filaFinal][self.columnaFinal]
+        self.coronacionPeon = (self.piezaMovida == "bP" and self.filaFinal == 0) or (
+                self.piezaMovida == "nP" and self.filaFinal == 7)
+        self.movimientoCapturaAlPaso = movimientoCapturaAlPaso
+        if movimientoCapturaAlPaso:
+            self.piezaCapturada = "bP" if self.piezaMovida == "bP" else "nP"
+
+        self.movimientoEnroque = movimientoEnroque
+
         self.movimientoID = self.filaInicial * 1000 + self.filaFinal * 100 + self.filaFinal * 10 + self.columnaFinal
 
     def __eq__(self, otro):
