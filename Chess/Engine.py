@@ -21,10 +21,7 @@ class EstadoJuego:
         self.clavadas = []
         self.posiblesJaques = []
         self.capturaAlPasoPosible = ()
-        self.actualEnroqueCorrectos = EnroqueCorrectos(True, True, True, True)
-        self.registroEnroqueCorrectos = [
-            EnroqueCorrectos(self.actualEnroqueCorrectos.lugarbR, self.actualEnroqueCorrectos.lugarnR,
-                             self.actualEnroqueCorrectos.lugarbQ, self.actualEnroqueCorrectos.lugarnQ)]
+
 
     '''
     Toma un movimiento como parametro y lo ejecuta
@@ -53,21 +50,6 @@ class EstadoJuego:
         else:
             self.capturaAlPasoPosible = ()
 
-        # movimiento de enroque
-        if mover.movimientoEnroque:
-            if mover.columnaFinal - mover.columnaInicial == 2:
-                self.tablero[mover.filaFinal][mover.columnaFinal - 1] = self.tablero[mover.filaFinal][
-                    mover.columnaFinal + 1]
-                self.tablero[mover.filaFinal][mover.columnaFinal + 1] = "--"
-            else:
-                self.tablero[mover.filaFinal][mover.columnaFinal + 1] = self.tablero[mover.filaFinal][
-                    mover.columnaFinal - 2]
-                self.tablero[mover.filaFinal][mover.columnaFinal - 2] = '--'
-
-        self.actualizarEnroqueCorrectos(mover)
-        self.registroEnroqueCorrectos.append(
-            EnroqueCorrectos(self.actualEnroqueCorrectos.lugarbR, self.actualEnroqueCorrectos.lugarnR,
-                             self.actualEnroqueCorrectos.lugarbQ, self.actualEnroqueCorrectos.lugarnQ))
 
     '''
     Rehacer el ultimo movimiento
@@ -89,8 +71,7 @@ class EstadoJuego:
                 self.capturaAlPasoPosible = (movimiento.filaFinal, movimiento.columnaFinal)
             if movimiento.piezaMovida[1] == 'P' and abs(movimiento.filaInicial - movimiento.filaFinal) == 2:
                 self.capturaAlPasoPosible = ()
-            self.registroEnroqueCorrectos.pop()
-            self.actualEnroqueCorrectos = self.registroEnroqueCorrectos[-1]
+
 
             # revertir enroque
             if movimiento.movimientoEnroque:
@@ -105,25 +86,7 @@ class EstadoJuego:
                             movimiento.columnaFinal + 1]
                     self.tablero[movimiento.filaFinal][movimiento.columnaFinal + 1] = '--'
 
-    def actualizarEnroqueCorrectos(self, movimiento):
-        if movimiento.piezaMovida == 'bK':
-            self.actualEnroqueCorrectos.lugarbR = False
-            self.actualEnroqueCorrectos.lugarbQ = False
-        elif movimiento.piezaMovida == "nR":
-            self.actualEnroqueCorrectos.lugarnR = False
-            self.actualEnroqueCorrectos.lugarnQ = False
-        elif movimiento.piezaMovida == "bT":
-            if movimiento.filaInicial == 7:
-                if movimiento.columnaInicial == 0:
-                    self.actualEnroqueCorrectos.lugarbQ = False
-                elif movimiento.columnaInicial == 7:
-                    self.actualEnroqueCorrectos.lugarbR = False
-        elif movimiento.piezaMovida == "nT":
-            if movimiento.filaInicial == 0:
-                if movimiento.columnaInicial == 0:
-                    self.actualEnroqueCorrectos.lugarnQ = False
-                elif movimiento.columnaInicial == 7:
-                    self.actualEnroqueCorrectos.lugarnR = False
+
 
     def traerMovimietosValidos(self):
         movimientos = []
@@ -383,27 +346,6 @@ class EstadoJuego:
                         self.ubicacionReyBlanco = (f, c)
                     else:
                         self.ubicacionReyNegro = (f, c)
-        self.getMovimientosEnroque(f, c, movimientos, colorAliado)
-
-    def getMovimientosEnroque(self, f, c, movimientos, colorAliado):
-        if self.cuadradoBajoAtaque(f, c):
-            return
-        if (self.movimientoBlanca and self.actualEnroqueCorrectos.lugarbR) or (
-                not self.movimientoBlanca and self.actualEnroqueCorrectos.lugarnR):
-            self.getMovimientsEnroquedelRey(f, c, movimientos, colorAliado)
-        if (self.movimientoBlanca and self.actualEnroqueCorrectos.lugarbQ) or (
-                not self.movimientoBlanca and self.actualEnroqueCorrectos.lugarnQ):
-            self.getMovimientsEnroquedelReina(f, c, movimientos, colorAliado)
-
-    def getMovimientsEnroquedelRey(self, f, c, movimientos, colorAliado):
-        if self.tablero[f][c + 1] == "--" and self.tablero[f][c + 2] == "--":
-            if not self.cuadradoBajoAtaque(f, c + 1) and not self.cuadradoBajoAtaque(f, c + 2):
-                movimientos.append(Mover((f, c), (f, c + 2), self.tablero, movimientoEnroque=True))
-
-    def getMovimientsEnroquedelReina(self, f, c, movimientos, colorAliado):
-        if self.tablero[f][c - 1] == "--" and self.tablero[f][c - 2] == "--" and self.tablero[f][c - 3]:
-            if not self.cuadradoBajoAtaque(f, c - 1) and not self.cuadradoBajoAtaque(f, c - 2):
-                movimientos.append(Mover((f, c), (f, c - 2), self.tablero, movimientoEnroque=True))
 
     def validarClavadayJaques(self):
         clavadas = []
@@ -468,12 +410,7 @@ class EstadoJuego:
         return enJaque, clavadas, posiblesJaques
 
 
-class EnroqueCorrectos:
-    def __init__(self, lugarbR, lugarnR, lugarbQ, lugarnQ):
-        self.lugarnR = lugarnR
-        self.lugarbR = lugarbR
-        self.lugarnQ = lugarnQ
-        self.lugarbQ = lugarbQ
+
 
 
 # Lista de movimientos separados

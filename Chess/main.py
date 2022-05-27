@@ -10,6 +10,7 @@ MAX_FPS = 15
 IMAGENES = {}
 
 
+
 def cargarImagenes():
     # Transformar las imagenes a una escala para el tablero
     IMAGENES["nA"] = p.transform.scale(
@@ -85,12 +86,14 @@ def main():
                     movRealizado = True
 
         if movRealizado:
+            animacionPiezas(estadoJuego.registroMov[-1],pantalla,estadoJuego.tablero, reloj)
             movimientosValidos = estadoJuego.traerMovimietosValidos()
             movRealizado = False
 
-        dibujarEstado(pantalla, estadoJuego)
+        dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
         reloj.tick(MAX_FPS)
         p.display.flip()
+
 
 
 '''
@@ -100,17 +103,15 @@ Dibuja las casillas del tablero
 #pantalla, array[]
 #d1,d2
 def dibujarTablero(pantalla):
-    color1 = p.Color("#C5742A")
-    color2 = p.Color("#EBCCAA")
+      global colores
+      colores = [p.Color("grey"), p.Color("white")]
 
-    for f in range(DIMENSION):
+      for f in range(DIMENSION):
         for c in range(DIMENSION):
-            if (f + c) % 2 == 0:
-                color = color2
-            else:
-                color = color1
+            color = colores[(f + c) % 2]
             p.draw.rect(pantalla, color, p.Rect(
-                c * SQ_SIZE, f * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+                c * SQ_SIZE, f * SQ_SIZE, SQ_SIZE, SQ_SIZE), 0)
+
 
 
 '''
@@ -132,9 +133,10 @@ Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
 
 
-def dibujarEstado(pantalla, estadoJuego):
+def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior):
     # Dibuja el tablero
     dibujarTablero(pantalla)
+    LACONCHADETUMADREPYTHON(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
     # Previsualización posibles direcciones(Luego)
 
     dibujarPiezas(pantalla, estadoJuego.tablero)
@@ -146,6 +148,42 @@ def dibujarEstado(pantalla, estadoJuego):
         p.display.set_caption("Ajedrez Grupo H ---- Turno Negra")
 
     # Dibujando piezas en los casilleros de los extremos
+
+'''Resaltar el movimientos de las piezas'''
+def LACONCHADETUMADREPYTHON(pantalla, estadoJuego, movimientosValidos, posicionAnterior):
+    if posicionAnterior != ():
+        f, c = posicionAnterior
+        if estadoJuego.tablero[f][c][0] == ('b' if estadoJuego.movimientoBlanca else 'n'):
+            s = p.Surface((SQ_SIZE, SQ_SIZE))
+            s.set_alpha(128)
+            s.fill(p.Color("Blue"))
+            pantalla.blit(s, (c * SQ_SIZE, f * SQ_SIZE))
+            s.fill(p.Color('Yellow'))
+            for mover in movimientosValidos:
+                if mover.filaInicial == f and mover.columnaInicial == c:
+                    pantalla.blit(s, (mover.columnaFinal * SQ_SIZE, mover.filaFinal * SQ_SIZE))
+
+
+def animacionPiezas(mover, pantalla, tablero, reloj):
+     global colores
+     dF = mover.filaFinal - mover.filaInicial
+     dC = mover.columnaFinal - mover.columnaInicial
+     FramesPorCuadrado = 10
+     CuentaFrames = (abs(dF) + abs(dC)) * FramesPorCuadrado
+     for Frames in range(CuentaFrames + 1):
+         r , c =((mover.filaInicial + dF * Frames // CuentaFrames, mover.columnaInicial + dC * Frames // CuentaFrames))
+         dibujarTablero(pantalla)
+         dibujarPiezas(pantalla, tablero)
+         color = colores [(mover.filaFinal + mover.columnaFinal) % 2]
+         cuadradoFinal = p.Rect(mover.columnaFinal* SQ_SIZE, mover.filaFinal * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+         p.draw.rect(pantalla, color, cuadradoFinal)
+         if mover.piezaCapturada != "--":
+             pantalla.blit(IMAGENES[mover.piezaCapturada], cuadradoFinal)
+         pantalla.blit(IMAGENES[mover.piezaMovida], p.Rect(c* SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+         p.display.flip()
+         reloj.tick(60)
+
+
 
 
 if __name__ == "__main__":
