@@ -54,6 +54,7 @@ def main():
     movRealizado = False
     animar = False
     pausar = p.mixer.music.get_busy()
+    gameOver = False
 
 
     logo = p.image.load("imagenes/logo.png")
@@ -64,31 +65,32 @@ def main():
     clicksJugador = []
     while ejecutando:
         for e in p.event.get():
-            if e.type == p.QUIT:
-                ejecutando = False
-            elif e.type == p.MOUSEBUTTONDOWN:
-                posicion = p.mouse.get_pos()  # posicion (x,y)
-                col = posicion[0] // SQ_SIZE
-                fil = posicion[1] // SQ_SIZE
-                if posicionAnterior == (fil, col):
-                    posicionAnterior = ()
-                    clicksJugador = []
-                else:
-                    posicionAnterior = (fil, col)
-                    clicksJugador.append(posicionAnterior)
-                if len(clicksJugador) == 2:
-                    mover = Engine.Mover(
-                        clicksJugador[0], clicksJugador[1], estadoJuego.tablero)
-                    print(mover.getNotacionAjedrez())
-                    if mover in movimientosValidos:
-                        estadoJuego.hacerMovimiento(mover)
-                        movRealizado = True
-                        animar = True
-                        posicionAnterior=()
-                        clicksJugador=[]
-                    else:
-                        clicksJugador=[posicionAnterior]
+            if not gameOver:
+                if e.type == p.QUIT:
+                    ejecutando = False
+                elif e.type == p.MOUSEBUTTONDOWN:
+                    posicion = p.mouse.get_pos()  # posicion (x,y)
+                    col = posicion[0] // SQ_SIZE
+                    fil = posicion[1] // SQ_SIZE
+                    if posicionAnterior == (fil, col):
                         posicionAnterior = ()
+                        clicksJugador = []
+                    else:
+                        posicionAnterior = (fil, col)
+                        clicksJugador.append(posicionAnterior)
+                    if len(clicksJugador) == 2:
+                        mover = Engine.Mover(
+                            clicksJugador[0], clicksJugador[1], estadoJuego.tablero)
+                        print(mover.getNotacionAjedrez())
+                        if mover in movimientosValidos:
+                            estadoJuego.hacerMovimiento(mover)
+                            movRealizado = True
+                            animar = True
+                            posicionAnterior=()
+                            clicksJugador=[]
+                        else:
+                            clicksJugador=[posicionAnterior]
+                            posicionAnterior = ()
 
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:  # z esta presionada
@@ -112,11 +114,6 @@ def main():
                     else:
                         p.mixer.music.unpause()
                     pausar = not pausar
-
-
-
-
-
         if movRealizado:
             if animar:
                animacionPiezas(estadoJuego.registroMov[-1],pantalla,estadoJuego.tablero, reloj)
@@ -125,6 +122,14 @@ def main():
             animar = False
 
         dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
+        if estadoJuego.enJaque:
+            gameOver = True
+            if estadoJuego.movimientoBlanca:
+                mensaje = "Negro gana por jaque"
+                dibujarTextos(pantalla,mensaje)
+            else:
+                mensaje = "Blanca gana por jaque"
+                dibujarTextos(pantalla, mensaje)
         reloj.tick(MAX_FPS)
         p.display.flip()
 
@@ -216,6 +221,12 @@ def animacionPiezas(mover, pantalla, tablero, reloj):
          pantalla.blit(IMAGENES[mover.piezaMovida], p.Rect(c* SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
          p.display.flip()
          reloj.tick(60)
+def dibujarTextos(pantalla, mensaje):
+    fuente = p.font.SysFont("Arial", 20)
+    mensaje = fuente.render(mensaje, 0, p.Color("Red"))
+    ubicacionTexto = p.Rect(0,0,ANCHO,ALTO).move(ANCHO/2 - pantalla.get_ANCHO()/2, ALTO/2 - pantalla.get_ALTO()/2)
+    mensaje = fuente.render(mensaje, True, p.Color("Red"))
+    pantalla.blit(mensaje, (10, 10))
 
 
 
