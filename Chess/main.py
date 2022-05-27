@@ -1,6 +1,7 @@
 import pygame as p
 from Chess import Engine
 
+
 # Settings iniciales para PYGAME
 p.init()
 ANCHO = ALTO = 512
@@ -8,6 +9,9 @@ DIMENSION = 8
 SQ_SIZE = ANCHO // DIMENSION
 MAX_FPS = 15
 IMAGENES = {}
+p.mixer.init()
+p.mixer.music.load("Sonidos y Musica/Musica de fondo.wav")
+p.mixer.music.play(-1)
 
 
 
