@@ -4,6 +4,8 @@ from Chess import Engine,AjedezIA
 # Settings iniciales para PYGAME
 p.init()
 ANCHO = ALTO = 512
+MOVELOGPANELANCHO = 250
+MOVELOGPANELALTO = ALTO
 DIMENSION = 8
 SQ_SIZE = ANCHO // DIMENSION
 MAX_FPS = 15
@@ -45,7 +47,8 @@ def cargarImagenes():
 
 def main():
     p.init()
-    pantalla = p.display.set_mode((ANCHO, ALTO))
+    pantalla = p.display.set_mode((ANCHO + MOVELOGPANELANCHO, ALTO))
+
     reloj = p.time.Clock()
     pantalla.fill(p.Color(255, 255, 255))
     estadoJuego = Engine.EstadoJuego()
@@ -53,7 +56,11 @@ def main():
     movRealizado = False
     animar = False
     pausar = p.mixer.music.get_busy()
-    gameOver = False
+    juegoTerminado = False
+    moveLogFuentes = p.font.SysFont("Console", 15, False, False)
+    jugador1 = True
+    jugador2 = False
+
 
 
     logo = p.image.load("imagenes/logo.png")
@@ -115,8 +122,6 @@ def main():
                         else:
                             p.mixer.music.unpause()
                         pausar = not pausar
-
-
         #logica ia
         if not juegoTerminado and not turnoHumano:
             IaMovimiento=AjedezIA.encontrarMejorMov(estadoJuego,movimientosValidos)
@@ -152,8 +157,31 @@ def main():
 Dibuja las casillas del tablero
 '''
 
-#pantalla, array[]
-#d1,d2
+
+def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes):
+      moveLogPantalla = p.Rect(ANCHO, 0, MOVELOGPANELANCHO, MOVELOGPANELALTO)
+      p.draw.rect(pantalla, p.Color("black"), moveLogPantalla)
+      moveLog = estadoJuego.registroMov
+      moveTexto = []
+      for i in range(0,len(moveLog),2):
+           moveString = str(i//2 + 1) + ", "+moveLog[i].getNotacionAjedrez() + " "
+           if i+1 < len(moveLog):
+               moveString += moveLog[i+1].getNotacionAjedrez()
+           moveTexto.append(moveString)
+      relleno = 5
+      espacioEntre = 2
+      textoY = relleno
+      for i in range(len(moveTexto)):
+          text = moveTexto[i]
+          mensajePantalla = moveLogFuentes.render(text, True, p.Color("White"))
+          ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+          pantalla.blit(mensajePantalla, ubicacionTexto)
+          textoY += mensajePantalla.get_height() + espacioEntre
+
+
+
+
+
 def dibujarTablero(pantalla):
       global colores
       colores = [p.Color("#C5742A"), p.Color("#EBCCAA")]
@@ -185,10 +213,11 @@ Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
 
 
-def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior):
+def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior,moveLogFuentes):
     # Dibuja el tablero
     dibujarTablero(pantalla)
-    LACONCHADETUMADREPYTHON(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
+    resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
+    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes)
     # Previsualización posibles direcciones(Luego)
 
     dibujarPiezas(pantalla, estadoJuego.tablero)
@@ -202,7 +231,7 @@ def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior):
     # Dibujando piezas en los casilleros de los extremos
 
 '''Resaltar el movimientos de las piezas'''
-def LACONCHADETUMADREPYTHON(pantalla, estadoJuego, movimientosValidos, posicionAnterior):
+def resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior):
     if posicionAnterior != ():
         f, c = posicionAnterior
         if estadoJuego.tablero[f][c][0] == ('b' if estadoJuego.movimientoBlanca else 'n'):

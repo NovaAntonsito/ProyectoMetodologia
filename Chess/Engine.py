@@ -21,6 +21,8 @@ class EstadoJuego:
         self.clavadas = []
         self.posiblesJaques = []
         self.capturaAlPasoPosible = ()
+        self.tablas = False
+        self.jaqueMate = False
 
 
     '''
