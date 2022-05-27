@@ -138,7 +138,7 @@ Dibuja las casillas del tablero
 #d1,d2
 def dibujarTablero(pantalla):
       global colores
-      colores = [p.Color("grey"), p.Color("white")]
+      colores = [p.Color("#C5742A"), p.Color("#EBCCAA")]
 
       for f in range(DIMENSION):
         for c in range(DIMENSION):
