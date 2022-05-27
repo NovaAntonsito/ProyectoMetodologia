@@ -1,5 +1,5 @@
 import pygame as p
-from Chess import Engine,AjedezIA
+from Chess import Engine, AjedezIA
 
 # Settings iniciales para PYGAME
 p.init()
@@ -11,7 +11,7 @@ SQ_SIZE = ANCHO // DIMENSION
 MAX_FPS = 15
 IMAGENES = {}
 p.mixer.init()
-p.mixer.music.load("Sonidos y Musica/Musica de fondo.wav")
+p.mixer.music.load("Sonidos/Musica de fondo.wav")
 p.mixer.music.play(-1)
 p.mixer.music.set_volume(0.050)
 
@@ -59,9 +59,8 @@ def main():
     juegoTerminado = False
     moveLogFuentes = p.font.SysFont("Console", 15, False, False)
     jugador1 = True
-    jugador2 = False
-
-
+    jugador2 = True
+    modoB = False
 
     logo = p.image.load("imagenes/logo.png")
     p.display.set_icon(logo)
@@ -76,6 +75,7 @@ def main():
                 if e.type == p.QUIT:
                     ejecutando = False
                 elif e.type == p.MOUSEBUTTONDOWN:
+
                     if not juegoTerminado and turnoHumano:
                         posicion = p.mouse.get_pos()  # posicion (x,y)
                         col = posicion[0] // SQ_SIZE
@@ -89,16 +89,15 @@ def main():
                         if len(clicksJugador) == 2:
                             mover = Engine.Mover(
                                 clicksJugador[0], clicksJugador[1], estadoJuego.tablero)
-                            print(mover.getNotacionAjedrez())
                             for i in range(len(movimientosValidos)):
                                 if mover == movimientosValidos[i]:
-                                    estadoJuego.hacerMovimiento(mover)
+                                    estadoJuego.hacerMovimiento(movimientosValidos[i])
                                     movRealizado = True
                                     animar = True
-                                    posicionAnterior=()
-                                    clicksJugador=[]
+                                    posicionAnterior = ()
+                                    clicksJugador = []
                             if not movRealizado:
-                                clicksJugador=[posicionAnterior]
+                                clicksJugador = [posicionAnterior]
                 elif e.type == p.KEYDOWN:
                     if e.key == p.K_z:  # z esta presionada
                         estadoJuego.movAnterior()
@@ -112,6 +111,12 @@ def main():
                         movRealizado = False
                         animar = False
                         juegoTerminado = False
+                    if e.key == p.K_b:
+                        p.mixer.quit()
+                        p.mixer.init()
+                        p.mixer.music.load("Sonidos/easteregg.wav")
+                        p.mixer.music.play(-1)
+                        modoB=True
                     if e.key == p.K_m:
                         p.mixer.music.set_volume(p.mixer.music.get_volume() + 0.05)
                     if e.key == p.K_n:
@@ -121,36 +126,35 @@ def main():
                             p.mixer.music.pause()
                         else:
                             p.mixer.music.unpause()
-                        pausar = not pausar
-        #logica ia
+                    pausar = not pausar
+        # logica ia
         if not juegoTerminado and not turnoHumano:
-            IaMovimiento=AjedezIA.encontrarMejorMov(estadoJuego,movimientosValidos)
-            if IaMovimiento is None:
+            movimientoIA = AjedezIA.encontrarMejorMov(estadoJuego, movimientosValidos)
+            if movimientoIA is None:
                 movimientoIA = AjedezIA.encontrarMovimientoRandom(movimientosValidos)
             estadoJuego.hacerMovimiento(movimientoIA)
-            movRealizado=True
-            animar=True
+            movRealizado = True
+            animar = True
 
         if movRealizado:
-                if animar:
-                   animacionPiezas(estadoJuego.registroMov[-1],pantalla,estadoJuego.tablero, reloj)
-                movimientosValidos = estadoJuego.traerMovimietosValidos()
-                movRealizado = False
-                animar = False
+            if animar:
+                animacionPiezas(estadoJuego.registroMov[-1], pantalla, estadoJuego.tablero, reloj,modoB)
+            movimientosValidos = estadoJuego.traerMovimietosValidos()
+            movRealizado = False
+            animar = False
 
-        dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior,moveLogFuentes)
+        dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,modoB)
 
         if estadoJuego.enJaque:
             juegoTerminado = True
             if estadoJuego.movimientoBlanca:
                 mensaje = "Negro gana por jaque"
-                dibujarTextos(pantalla,mensaje)
+                dibujarTextos(pantalla, mensaje)
             else:
                 mensaje = "Blanca gana por jaque"
                 dibujarTextos(pantalla, mensaje)
         reloj.tick(MAX_FPS)
         p.display.flip()
-
 
 
 '''
@@ -159,39 +163,59 @@ Dibuja las casillas del tablero
 
 
 def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes):
-      moveLogPantalla = p.Rect(ANCHO, 0, MOVELOGPANELANCHO, MOVELOGPANELALTO)
-      p.draw.rect(pantalla, p.Color("black"), moveLogPantalla)
-      moveLog = estadoJuego.registroMov
-      moveTexto = []
-      for i in range(0,len(moveLog),2):
-           moveString = str(i//2 + 1) + ", "+moveLog[i].getNotacionAjedrez() + " "
-           if i+1 < len(moveLog):
-               moveString += moveLog[i+1].getNotacionAjedrez()
-           moveTexto.append(moveString)
-      relleno = 5
-      espacioEntre = 2
-      textoY = relleno
-      for i in range(len(moveTexto)):
-          text = moveTexto[i]
-          mensajePantalla = moveLogFuentes.render(text, True, p.Color("White"))
-          ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-          pantalla.blit(mensajePantalla, ubicacionTexto)
-          textoY += mensajePantalla.get_height() + espacioEntre
+    moveLogPantalla = p.Rect(ANCHO, 0, MOVELOGPANELANCHO, MOVELOGPANELALTO)
+    p.draw.rect(pantalla, p.Color("black"), moveLogPantalla)
+    moveLog = estadoJuego.registroMov
+    texto1 = "ee"
+    moveTexto = []
+    for i in range(0, len(moveLog), 2):
+        moveString = str(i // 2 + 1) + ", " + moveLog[i].getNotacionAjedrez() + " "
+        if i + 1 < len(moveLog):
+            moveString += moveLog[i + 1].getNotacionAjedrez()
+        moveTexto.append(moveString)
+    relleno = 5
+    espacioEntre = 2
+    textoY = relleno
+    for i in range(len(moveTexto)):
+        text = moveTexto[i]
+        mensajePantalla = moveLogFuentes.render(text, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        pantalla.blit(mensajePantalla, ubicacionTexto)
+        textoY += mensajePantalla.get_height() + espacioEntre
+
+    espacioEntre = 20
+
+    for i in range(len(moveTexto)):
+      if (estadoJuego.movimientoBlanca):
+        texto1 = "Turno Blanca"
+        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
+      else:
+        texto1 = "Turno Negra"
+        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
 
 
-
-
-
-def dibujarTablero(pantalla):
-      global colores
-      colores = [p.Color("#C5742A"), p.Color("#EBCCAA")]
-
-      for f in range(DIMENSION):
-        for c in range(DIMENSION):
-            color = colores[(f + c) % 2]
-            p.draw.rect(pantalla, color, p.Rect(
-                c * SQ_SIZE, f * SQ_SIZE, SQ_SIZE, SQ_SIZE), 0)
-
+def dibujarTablero(pantalla,modoB=False):
+    global colores
+    if(modoB):
+        colores = [p.Color("#F3A717"), p.Color("#0E457F")]
+        for f in range(DIMENSION):
+            for c in range(DIMENSION):
+                color = colores[(f + c) % 2]
+                p.draw.rect(pantalla, color, p.Rect(
+                    c * SQ_SIZE, f * SQ_SIZE, SQ_SIZE, SQ_SIZE), 0)
+    else:
+        colores = [p.Color("#C5742A"), p.Color("#EBCCAA")]
+        for f in range(DIMENSION):
+            for c in range(DIMENSION):
+                color = colores[(f + c) % 2]
+                p.draw.rect(pantalla, color, p.Rect(
+                    c * SQ_SIZE, f * SQ_SIZE, SQ_SIZE, SQ_SIZE), 0)
 
 
 '''
@@ -213,24 +237,20 @@ Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
 
 
-def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior,moveLogFuentes):
+def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,modoB=False):
     # Dibuja el tablero
-    dibujarTablero(pantalla)
+    dibujarTablero(pantalla,modoB)
     resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
     dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes)
-    # Previsualización posibles direcciones(Luego)
-
     dibujarPiezas(pantalla, estadoJuego.tablero)
-    if (estadoJuego.movimientoBlanca):
-        p.display.set_caption("Ajedrez Grupo H ---- Turno Blanca")
-        p.display.update()
-    else:
-        p.display.update()
-        p.display.set_caption("Ajedrez Grupo H ---- Turno Negra")
+
 
     # Dibujando piezas en los casilleros de los extremos
 
+
 '''Resaltar el movimientos de las piezas'''
+
+
 def resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior):
     if posicionAnterior != ():
         f, c = posicionAnterior
@@ -245,31 +265,31 @@ def resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnter
                     pantalla.blit(s, (mover.columnaFinal * SQ_SIZE, mover.filaFinal * SQ_SIZE))
 
 
+def animacionPiezas(mover, pantalla, tablero, reloj,modoB=False):
+    dF = mover.filaFinal - mover.filaInicial
+    dC = mover.columnaFinal - mover.columnaInicial
+    FramesPorCuadrado = 10
+    CuentaFrames = (abs(dF) + abs(dC)) * FramesPorCuadrado
+    for Frames in range(CuentaFrames + 1):
+        r, c = ((mover.filaInicial + dF * Frames / CuentaFrames, mover.columnaInicial + dC * Frames / CuentaFrames))
+        dibujarTablero(pantalla,modoB)
+        dibujarPiezas(pantalla, tablero)
+        color = colores[(mover.filaFinal + mover.columnaFinal) % 2]
+        cuadradoFinal = p.Rect(mover.columnaFinal * SQ_SIZE, mover.filaFinal * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+        p.draw.rect(pantalla, color, cuadradoFinal)
+        if mover.piezaCapturada != "--":
+            pantalla.blit(IMAGENES[mover.piezaCapturada], cuadradoFinal)
+        pantalla.blit(IMAGENES[mover.piezaMovida], p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+        p.display.flip()
+        reloj.tick(60)
 
-def animacionPiezas(mover, pantalla, tablero, reloj):
-     global colores
-     dF = mover.filaFinal - mover.filaInicial
-     dC = mover.columnaFinal - mover.columnaInicial
-     FramesPorCuadrado = 10
-     CuentaFrames = (abs(dF) + abs(dC)) * FramesPorCuadrado
-     for Frames in range(CuentaFrames + 1):
-         r , c =((mover.filaInicial + dF * Frames / CuentaFrames, mover.columnaInicial + dC * Frames / CuentaFrames))
-         dibujarTablero(pantalla)
-         dibujarPiezas(pantalla, tablero)
-         color = colores [(mover.filaFinal + mover.columnaFinal) % 2]
-         cuadradoFinal = p.Rect(mover.columnaFinal* SQ_SIZE, mover.filaFinal * SQ_SIZE, SQ_SIZE, SQ_SIZE)
-         p.draw.rect(pantalla, color, cuadradoFinal)
-         if mover.piezaCapturada != "--":
-             pantalla.blit(IMAGENES[mover.piezaCapturada], cuadradoFinal)
-         pantalla.blit(IMAGENES[mover.piezaMovida], p.Rect(c* SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
-         p.display.flip()
-         reloj.tick(60)
+
 def dibujarTextos(pantalla, mensaje):
-    fuente = p.font.SysFont("Helvitca", 32,True, False)
+    fuente = p.font.SysFont("Helvitca", 32, True, False)
     mensajePantalla = fuente.render(mensaje, False, p.Color("Gray"))
-    ubicacionTexto = p.Rect(0,0,ANCHO,ALTO).move(ANCHO/2 - mensajePantalla.get_width()/2, ALTO/2 - mensajePantalla.get_height()/2)
-    pantalla.blit(mensajePantalla,ubicacionTexto)
-
+    ubicacionTexto = p.Rect(0, 0, ANCHO, ALTO).move(ANCHO / 2 - mensajePantalla.get_width() / 2,
+                                                    ALTO / 2 - mensajePantalla.get_height() / 2)
+    pantalla.blit(mensajePantalla, ubicacionTexto)
 
 
 if __name__ == "__main__":

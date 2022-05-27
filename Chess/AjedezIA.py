@@ -15,15 +15,16 @@ def encontrarMejorMov(estadoJuego, movValidos):
     mejorMov = None
     for movimientoJugador in movValidos:
         estadoJuego.hacerMovimiento(movimientoJugador)
-        if estadoJuego.enJaque():
+        if estadoJuego.jaqueMate:
             puntaje = jaqueMate
-        elif estadoJuego.tablas():
+        elif estadoJuego.tablas:
             puntaje = tablas
         else:
             puntaje = multiplicarTurno * puntuacionMaterial(estadoJuego.tablero)
         if puntaje > puntuacionMax:
             puntaje = puntuacionMax
             mejorMov = movimientoJugador
+        estadoJuego.movAnterior()
     return mejorMov
 
 '''
