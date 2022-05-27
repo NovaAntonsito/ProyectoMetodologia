@@ -175,7 +175,7 @@ def animacionPiezas(mover, pantalla, tablero, reloj):
      FramesPorCuadrado = 10
      CuentaFrames = (abs(dF) + abs(dC)) * FramesPorCuadrado
      for Frames in range(CuentaFrames + 1):
-         r , c =((mover.filaInicial + dF * Frames // CuentaFrames, mover.columnaInicial + dC * Frames // CuentaFrames))
+         r , c =((mover.filaInicial + dF * Frames / CuentaFrames, mover.columnaInicial + dC * Frames / CuentaFrames))
          dibujarTablero(pantalla)
          dibujarPiezas(pantalla, tablero)
          color = colores [(mover.filaFinal + mover.columnaFinal) % 2]
