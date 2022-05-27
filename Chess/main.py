@@ -12,6 +12,7 @@ IMAGENES = {}
 p.mixer.init()
 p.mixer.music.load("Sonidos y Musica/Musica de fondo.wav")
 p.mixer.music.play(-1)
+p.mixer.music.set_volume(0.050)
 
 
 
@@ -51,6 +52,10 @@ def main():
     estadoJuego = Engine.EstadoJuego()
     movimientosValidos = estadoJuego.traerMovimietosValidos()
     movRealizado = False
+    animar = False
+    pausar = p.mixer.music.get_busy()
+
+
     logo = p.image.load("imagenes/logo.png")
     p.display.set_icon(logo)
     cargarImagenes()
@@ -78,6 +83,7 @@ def main():
                     if mover in movimientosValidos:
                         estadoJuego.hacerMovimiento(mover)
                         movRealizado = True
+                        animar = True
                         posicionAnterior=()
                         clicksJugador=[]
                     else:
@@ -88,11 +94,35 @@ def main():
                 if e.key == p.K_z:  # z esta presionada
                     estadoJuego.movAnterior()
                     movRealizado = True
+                    animar = False
+                if e.key == p.K_r:
+                    estadoJuego = Engine.EstadoJuego()
+                    movimientosValidos = estadoJuego.traerMovimietosValidos()
+                    posicionAnterior = ()
+                    clicksJugador = []
+                    movRealizado = False
+                    animar = False
+                if e.key == p.K_m:
+                    p.mixer.music.set_volume(p.mixer.music.get_volume() + 0.05)
+                if e.key == p.K_n:
+                    p.mixer.music.set_volume(p.mixer.music.get_volume() - 0.05)
+                if e.key == p.K_t:
+                    if pausar:
+                        p.mixer.music.pause()
+                    else:
+                        p.mixer.music.unpause()
+                    pausar = not pausar
+
+
+
+
 
         if movRealizado:
-            animacionPiezas(estadoJuego.registroMov[-1],pantalla,estadoJuego.tablero, reloj)
+            if animar:
+               animacionPiezas(estadoJuego.registroMov[-1],pantalla,estadoJuego.tablero, reloj)
             movimientosValidos = estadoJuego.traerMovimietosValidos()
             movRealizado = False
+            animar = False
 
         dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
         reloj.tick(MAX_FPS)
