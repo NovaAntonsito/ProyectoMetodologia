@@ -16,7 +16,6 @@ p.mixer.music.play(-1)
 p.mixer.music.set_volume(0.050)
 
 
-
 def cargarImagenes():
     # Transformar las imagenes a una escala para el tablero
     IMAGENES["nA"] = p.transform.scale(
@@ -116,7 +115,7 @@ def main():
                         p.mixer.init()
                         p.mixer.music.load("Sonidos/easteregg.wav")
                         p.mixer.music.play(-1)
-                        modoB=True
+                        modoB = True
                     if e.key == p.K_m:
                         p.mixer.music.set_volume(p.mixer.music.get_volume() + 0.05)
                     if e.key == p.K_n:
@@ -138,12 +137,12 @@ def main():
 
         if movRealizado:
             if animar:
-                animacionPiezas(estadoJuego.registroMov[-1], pantalla, estadoJuego.tablero, reloj,modoB)
+                animacionPiezas(estadoJuego.registroMov[-1], pantalla, estadoJuego.tablero, reloj, modoB)
             movimientosValidos = estadoJuego.traerMovimietosValidos()
             movRealizado = False
             animar = False
 
-        dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,modoB)
+        dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes, modoB)
 
         if estadoJuego.enJaque:
             juegoTerminado = True
@@ -186,23 +185,23 @@ def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes):
     espacioEntre = 20
 
     for i in range(len(moveTexto)):
-      if (estadoJuego.movimientoBlanca):
-        texto1 = "Turno Blanca"
-        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
-        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-        textoY += mensajePantalla.get_height() + espacioEntre
-        pantalla.blit(mensajePantalla, ubicacionTexto)
-      else:
-        texto1 = "Turno Negra"
-        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
-        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-        textoY += mensajePantalla.get_height() + espacioEntre
-        pantalla.blit(mensajePantalla, ubicacionTexto)
+        if (estadoJuego.movimientoBlanca):
+            texto1 = "Turno Blanca"
+            mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
+            ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+            textoY += mensajePantalla.get_height() + espacioEntre
+            pantalla.blit(mensajePantalla, ubicacionTexto)
+        else:
+            texto1 = "Turno Negra"
+            mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
+            ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+            textoY += mensajePantalla.get_height() + espacioEntre
+            pantalla.blit(mensajePantalla, ubicacionTexto)
 
 
-def dibujarTablero(pantalla,modoB=False):
+def dibujarTablero(pantalla, modoB=False):
     global colores
-    if(modoB):
+    if (modoB):
         colores = [p.Color("#F3A717"), p.Color("#0E457F")]
         for f in range(DIMENSION):
             for c in range(DIMENSION):
@@ -237,13 +236,12 @@ Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
 
 
-def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,modoB=False):
+def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes, modoB=False):
     # Dibuja el tablero
-    dibujarTablero(pantalla,modoB)
+    dibujarTablero(pantalla, modoB)
     resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
     dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes)
     dibujarPiezas(pantalla, estadoJuego.tablero)
-
 
     # Dibujando piezas en los casilleros de los extremos
 
@@ -265,14 +263,14 @@ def resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnter
                     pantalla.blit(s, (mover.columnaFinal * SQ_SIZE, mover.filaFinal * SQ_SIZE))
 
 
-def animacionPiezas(mover, pantalla, tablero, reloj,modoB=False):
+def animacionPiezas(mover, pantalla, tablero, reloj, modoB=False):
     dF = mover.filaFinal - mover.filaInicial
     dC = mover.columnaFinal - mover.columnaInicial
     FramesPorCuadrado = 10
     CuentaFrames = (abs(dF) + abs(dC)) * FramesPorCuadrado
     for Frames in range(CuentaFrames + 1):
         r, c = ((mover.filaInicial + dF * Frames / CuentaFrames, mover.columnaInicial + dC * Frames / CuentaFrames))
-        dibujarTablero(pantalla,modoB)
+        dibujarTablero(pantalla, modoB)
         dibujarPiezas(pantalla, tablero)
         color = colores[(mover.filaFinal + mover.columnaFinal) % 2]
         cuadradoFinal = p.Rect(mover.columnaFinal * SQ_SIZE, mover.filaFinal * SQ_SIZE, SQ_SIZE, SQ_SIZE)
