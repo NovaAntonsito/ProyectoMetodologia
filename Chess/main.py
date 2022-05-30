@@ -60,7 +60,7 @@ def main():
     juegoTerminado = False
     moveLogFuentes = p.font.SysFont("Console", 15, False, False)
     jugador1 = True
-    jugador2 = True
+    jugador2 = False
     modoB = False
     pensamientoIa = False
     movimientoRehecho = False
@@ -147,8 +147,8 @@ def main():
             if not pensamientoIa:
                 pensamientoIa = True
                 return_queue = Queue()
-                encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,
-                                       args=(estadoJuego, movimientosValidos, return_queue))
+                encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,args=(estadoJuego, movimientosValidos, return_queue))
+                encontrarmov.start()
 
             if not encontrarmov.is_alive():
                 movimientoIA = return_queue.get()

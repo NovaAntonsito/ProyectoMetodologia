@@ -86,14 +86,14 @@ def encontrarMejorMovnoRecurcion(estadoJuego, movValidos):
     return mejorMov
 
 
-def encontrarMejorMovimiento(estadoJuego, movValidos,return_queue):
+def encontrarMejorMovimiento(estadoJuego, movValidos, return_queue):
     global movimientoSiguiente
     movimientoSiguiente = None
     random.shuffle(movValidos)
-    # encontrarMovimimientoMinMax(estadoJuego,movValidos,PROF , estadoJuego.movimientoBlanca)
-    # encontrarMovMegaMax(estadoJuego, movValidos, PROF, 1 if estadoJuego.movimientoBlanca else -1)
-    encontrarMovMegaMaxAlphaBeta(estadoJuego, movValidos, PROF, -JAQUEMATE, JAQUEMATE,
-                                 1 if estadoJuego.movimientoBlanca else -1)
+    #encontrarMovimientoRandom(movValidos)
+    #encontrarMovimimientoMinMax(estadoJuego,movValidos,PROF , estadoJuego.movimientoBlanca)
+    #encontrarMovMegaMax(estadoJuego, movValidos, PROF, 1 if estadoJuego.movimientoBlanca else -1)
+    encontrarMovMaxAlfaBeta(estadoJuego, movValidos, PROF, -JAQUEMATE, JAQUEMATE,1 if estadoJuego.movimientoBlanca else -1)
     return_queue.put(movimientoSiguiente)
 
 
@@ -145,28 +145,26 @@ def encontrarMovMegaMax(estadoJuego, movValidos, profundidad, multiplicadorTUrno
         estadoJuego.deshacerMovimiento()
     return puntuacionMax
 
-def encontrarMovMegaMaxAlphaBeta(estadoJuego, movValidos, profundidad, alpha, beta, multiplicadorTUrno):
-    global movimientoSiguiente
+def encontrarMovMaxAlfaBeta(estadoJuego, movValidos, profundidad, alfa, beta, multiplicadorTurno):
+    global movSiguiente
     if profundidad == 0:
-        return multiplicadorTUrno * puntuarTablero(estadoJuego)
-
-    puntuacionMax = -JAQUEMATE
-    for mov in movValidos:
-        estadoJuego.hacerMovimiento(mov)
-        movimientoSiguiente = estadoJuego.traerMovimientosValidos()
-        puntuacion = -encontrarMovMegaMaxAlphaBeta(estadoJuego, movimientoSiguiente, profundidad - 1, -beta, -alpha,
-                                                   -multiplicadorTUrno)
-        if puntuacion > puntuacionMax:
-            puntuacionMax = puntuacion
+        return multiplicadorTurno * puntuarTablero(estadoJuego)
+  
+    max_score = -JAQUEMATE
+    for move in movValidos:
+        estadoJuego.hacerMovimiento(move)
+        next_moves = estadoJuego.traerMovimientosValidos()
+        score = -encontrarMovMaxAlfaBeta(estadoJuego, next_moves, profundidad - 1, -beta, -alfa, -multiplicadorTurno)
+        if score > max_score:
+            max_score = score
             if profundidad == PROF:
-                movimientoSiguiente = mov
-
+                movSiguiente = move
         estadoJuego.deshacerMovimiento()
-        if puntuacionMax > alpha:
-            alpha = puntuacionMax
-        if alpha >= beta:
+        if max_score > alfa:
+            alfa = max_score
+        if alfa >= beta:
             break
-    return puntuacionMax
+    return max_score
 
 '''
 UN puntaje Positivo es bueno para las blancas y uno negativo, bueno para las negras
