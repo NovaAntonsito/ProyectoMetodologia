@@ -1,8 +1,18 @@
+"""
+Storing all the information about the current state of chess game.
+Determining valid movimientos at current state.
+It will keep movimiento log.
+"""
+
+
 class EstadoJuego:
     def __init__(self):
-        # el talblero es un array de 8x8, donde cada elemento tiene dos caracteres.
-        # el primero refiere al color n(negro) y b(blanco)
-        # el segundo refiere a la pieza que representa en el ajerez.
+        """
+        tablero is an 8x8 2d list, each element in list has 2 characters.
+        The first character represents the color of the piece: 'b' or 'w'.
+        The second character represents the type of the piece: 'R', 'N', 'B', 'Q', 'K' or 'p'.
+        "--" represents an empty space with no piece.
+        """
         self.tablero = [
             ["nT", "nC", "nA", "nQ", "nR", "nA", "nC", "nT"],
             ["nP", "nP", "nP", "nP", "nP", "nP", "nP", "nP"],
@@ -12,183 +22,207 @@ class EstadoJuego:
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
             ["bT", "bC", "bA", "bQ", "bR", "bA", "bC", "bT"]]
+
         self.movimientoBlanca = True
         self.registroMov = []
-        # Lectura de jaques mate
         self.ubicacionReyBlanco = (7, 4)
         self.ubicacionReyNegro = (0, 4)
-        self.enJaque = False
-        self.tablas = False
         self.jaqueMate = False
+        self.tablas = False
+        self.enJaque = False
         self.clavadas = []
         self.posiblesJaques = []
-        self.capturaAlPasoPosible = ()
+        self.capturaAlPasoPosible = ()  # coordinates for the casilla where en-passant capture is possible
         self.registroCapturas = [self.capturaAlPasoPosible]
         self.enroque = Enroque(True, True, True, True)
-        self.registroEnroque = [Enroque(self.enroque.reyBlanco, self.enroque.reyNegro,
-                                        self.enroque.reinaBlanca, self.enroque.reinaNegra)]
+        self.registroEnroques = [Enroque(self.enroque.ReyBlanco, self.enroque.ReyNegro,
+                                         self.enroque.ReinaBlanca, self.enroque.ReinaNegra)]
 
-    '''
-    Toma un movimiento como parametro y lo ejecuta
-    '''
+    def hacerMovimiento(self, movimiento):
+        """
+        Takes a movimiento as a parameter and executes it.
+        (this will not work for castling, pawn promotion and en-passant)
+        """
+        self.tablero[movimiento.filaInicial][movimiento.columnaInicial] = "--"
+        self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaMovida
+        self.registroMov.append(movimiento)  # log the movimiento so we can undo it later
+        self.movimientoBlanca = not self.movimientoBlanca  # switch players
+        # update king's location if moved
+        if movimiento.piezaMovida == "nT":
+            self.ubicacionReyBlanco = (movimiento.filaFinal, movimiento.columnaFinal)
+        elif movimiento.piezaMovida == "nR":
+            self.ubicacionReyNegro = (movimiento.filaFinal, movimiento.columnaFinal)
 
-    def hacerMovimiento(self, mover):
-        self.tablero[mover.filaInicial][mover.columnaInicial] = "--"
-        self.tablero[mover.filaFinal][mover.columnaFinal] = mover.piezaMovida
-        self.registroMov.append(mover)  # registramos el movimiento
-        self.movimientoBlanca = not self.movimientoBlanca  # cambio de turno
-        # Cambiar la pos del rey
-        if mover.piezaMovida == "bR":
-            self.ubicacionReyBlanco = (mover.filaFinal, mover.columnaFinal)
-        elif mover.piezaMovida == "nR":
-            self.ubicacionReyNegro = (mover.filaFinal, mover.columnaFinal)
+        # pawn promotion
+        if movimiento.coronacionPeon:
+            # if not is_AI:
+            #    promoted_piece = input("Promote to Q, R, B, or N:") #take this to UI later
+            #    self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaMovida[0] + promoted_piece
+            # else:
+            self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaMovida[0] + "Q"
 
-        if mover.coronacionPeon:
-            self.tablero[mover.filaFinal][mover.columnaFinal] = mover.piezaMovida[0] + 'Q'
+        # enpassant movimiento
+        if movimiento.movimientoCapturaAlPaso:
+            self.tablero[movimiento.filaInicial][movimiento.columnaFinal] = "--"  # capturing the pawn
 
-        if mover.movimientoCapturaAlPaso:
-            self.tablero[mover.filaInicial][mover.columnaFinal] = "--"
-
-        if mover.piezaMovida[1] == 'P' and abs(mover.filaInicial - mover.filaFinal) == 2:
-            self.capturaAlPasoPosible = ((mover.filaInicial + mover.filaFinal) // 2, mover.columnaInicial)
+        # update capturaAlPasoPosible variable
+        if movimiento.piezaMovida[1] == "P" and abs(
+                movimiento.filaInicial - movimiento.filaFinal) == 2:  # only on 2 casilla pawn advance
+            self.capturaAlPasoPosible = (
+                (movimiento.filaInicial + movimiento.filaFinal) // 2, movimiento.columnaInicial)
         else:
             self.capturaAlPasoPosible = ()
 
-        # movinento enroque
-        if mover.movimientoEnroque:
-            if mover.columnaFinal - mover.columnaInicial == 2:
-                self.tablero[mover.filaFinal][mover.columnaFinal - 1] = self.tablero[mover.filaFinal][
-                    mover.columnaFinal + 1]
-                self.tablero[mover.filaFinal][mover.columnaFinal + 1] = "--"
-            else:
-                self.tablero[mover.filaFinal][mover.columnaFinal + 1] = self.tablero[mover.filaFinal][
-                    mover.columnaFinal - 2]
-                self.tablero[mover.filaFinal][mover.columnaFinal - 2] = "--"
+        # castle movimiento
+        if movimiento.movimientoEnroque:
+            if movimiento.columnaFinal - movimiento.columnaInicial == 2:  # king-side castle movimiento
+                self.tablero[movimiento.filaFinal][movimiento.columnaFinal - 1] = self.tablero[movimiento.filaFinal][
+                    movimiento.columnaFinal + 1]  # movimientos the rook to its new casilla
+                self.tablero[movimiento.filaFinal][movimiento.columnaFinal + 1] = '--'  # erase old rook
+            else:  # queen-side castle movimiento
+                self.tablero[movimiento.filaFinal][movimiento.columnaFinal + 1] = self.tablero[movimiento.filaFinal][
+                    movimiento.columnaFinal - 2]  # movimientos the rook to its new casilla
+                self.tablero[movimiento.filaFinal][movimiento.columnaFinal - 2] = '--'  # erase old rook
 
         self.registroCapturas.append(self.capturaAlPasoPosible)
 
-        self.actualizarEnroque(mover)
-        self.registroEnroque.append(
-            Enroque(self.enroque.reyBlanco, self.enroque.reyNegro, self.enroque.reinaBlanca, self.enroque.reinaNegra))
+        # update castling rights - whenever it is a rook or king movimiento
+        self.actualizarEnroque(movimiento)
+        self.registroEnroques.append(Enroque(self.enroque.ReyBlanco, self.enroque.ReyNegro,
+                                             self.enroque.ReinaBlanca, self.enroque.ReinaNegra))
 
-        '''
-        Rehacer el ultimo movimiento
-        '''
-
-    def movAnterior(self):
-        if len(self.registroMov) != 0:
+    def deshacerMovimiento(self):
+        """
+        Undo the last movimiento
+        """
+        if len(self.registroMov) != 0:  # make sure that there is a movimiento to undo
             movimiento = self.registroMov.pop()
             self.tablero[movimiento.filaInicial][movimiento.columnaInicial] = movimiento.piezaMovida
             self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaCapturada
-            self.movimientoBlanca = not self.movimientoBlanca
-            if movimiento.piezaMovida == "bR":
+            self.movimientoBlanca = not self.movimientoBlanca  # swap players
+            # update the king's position if needed
+            if movimiento.piezaMovida == "nT":
                 self.ubicacionReyBlanco = (movimiento.filaInicial, movimiento.columnaInicial)
             elif movimiento.piezaMovida == "nR":
                 self.ubicacionReyNegro = (movimiento.filaInicial, movimiento.columnaInicial)
+            # undo en passant movimiento
             if movimiento.movimientoCapturaAlPaso:
-                self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = "--"
+                self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = "--"  # leave landing casilla blank
                 self.tablero[movimiento.filaInicial][movimiento.columnaFinal] = movimiento.piezaCapturada
 
             self.registroCapturas.pop()
             self.capturaAlPasoPosible = self.registroCapturas[-1]
 
-            self.registroEnroque.pop()
-            self.enroque = self.registroEnroque[-1]
-            # revertir enroque
+            # undo castle rights
+            self.registroEnroques.pop()  # get rid of the new castle rights from the movimiento we are undoing
+            self.enroque = self.registroEnroques[-1]  # set the current castle rights to the last one in the list
+            # undo the castle movimiento
             if movimiento.movimientoEnroque:
-                if movimiento.columnaFinal - movimiento.columnaInicial == 2:
+                if movimiento.columnaFinal - movimiento.columnaInicial == 2:  # king-side
                     self.tablero[movimiento.filaFinal][movimiento.columnaFinal + 1] = \
-                        self.tablero[movimiento.filaFinal][
-                            movimiento.columnaFinal - 1]
-                    self.tablero[movimiento.filaFinal][movimiento.columnaFinal - 1] = "--"
-                else:
+                        self.tablero[movimiento.filaFinal][movimiento.columnaFinal - 1]
+                    self.tablero[movimiento.filaFinal][movimiento.columnaFinal - 1] = '--'
+                else:  # queen-side
                     self.tablero[movimiento.filaFinal][movimiento.columnaFinal - 2] = \
-                        self.tablero[movimiento.filaFinal][
-                            movimiento.columnaFinal + 1]
+                        self.tablero[movimiento.filaFinal][movimiento.columnaFinal + 1]
                     self.tablero[movimiento.filaFinal][movimiento.columnaFinal + 1] = '--'
-            self.tablas = False
             self.jaqueMate = False
+            self.tablas = False
 
     def actualizarEnroque(self, movimiento):
+        """
+        Update the castle rights given the movimiento
+        """
         if movimiento.piezaCapturada == "bT":
-            if movimiento.columnaFinal == 0:
-                self.enroque.reinaBlanca = False
-            elif movimiento.columnaFinal == 7:
-                self.enroque.reyBlanco = False
+            if movimiento.filaFinal == 7:
+                if movimiento.columnaFinal == 0:  # left rook
+                    self.enroque.ReinaBlanca = False
+                elif movimiento.columnaFinal == 7:  # right rook
+                    self.enroque.ReyBlanco = False
         elif movimiento.piezaCapturada == "nT":
-            if movimiento.columnaFinal == 0:
-                self.enroque.reinaNegra = False
-            elif movimiento.columnaFinal == 7:
-                self.enroque.reyNegro = False
-
-        if movimiento.piezaMovida == "bR":
-            self.enroque.reyBlanco = False
-            self.enroque.reinaBlanca = False
-        elif movimiento.piezaMovida == "nR":
-            self.enroque.reyNegro = False
-            self.enroque.reinaNegra = False
-        elif movimiento.piezaMovida == "bT":
+            if movimiento.filaFinal == 0:
+                if movimiento.columnaFinal == 0:  # left rook
+                    self.enroque.ReinaNegra = False
+                elif movimiento.columnaFinal == 7:  # right rook
+                    self.enroque.ReyNegro = False
+        if movimiento.piezaMovida == 'bR':
+            self.enroque.ReinaBlanca = False
+            self.enroque.ReyBlanco = False
+        elif movimiento.piezaMovida == 'nR':
+            self.enroque.ReinaNegra = False
+            self.enroque.ReyNegro = False
+        elif movimiento.piezaMovida == 'bT':
             if movimiento.filaInicial == 7:
-                if movimiento.columnaInicial == 0:
-                    self.enroque.reinaBlanca = False
-                elif movimiento.columnaInicial == 7:
-                    self.enroque.reyBlanco = False
-        elif movimiento.piezaMovida == "nT":
+                if movimiento.columnaInicial == 0:  # left rook
+                    self.enroque.ReinaBlanca = False
+                elif movimiento.columnaInicial == 7:  # right rook
+                    self.enroque.ReyBlanco = False
+        elif movimiento.piezaMovida == 'nT':
             if movimiento.filaInicial == 0:
-                if movimiento.columnaInicial == 0:
-                    self.enroque.reinaNegra = False
-                elif movimiento.columnaInicial == 7:
-                    self.enroque.reyNegro = False
+                if movimiento.columnaInicial == 0:  # left rook
+                    self.enroque.ReinaNegra = False
+                elif movimiento.columnaInicial == 7:  # right rook
+                    self.enroque.ReyNegro = False
 
-    def traerMovimietosValidos(self):
-        enroqueTemp = Enroque(self.enroque.reyBlanco, self.enroque.reyNegro, self.enroque.reinaBlanca,
-                              self.enroque.reinaNegra)
+    def traerMovimientosValidos(self):
+        """
+        All movimientos considering posiblesJaques.
+        """
+        enroqueTemp = Enroque(self.enroque.ReyBlanco, self.enroque.ReyNegro,
+                              self.enroque.ReinaBlanca, self.enroque.ReinaNegra)
+        # advanced algorithm
         movimientos = []
-        self.en_Jaque, self.clavadas, self.posiblesJaques = self.validarClavadayJaques()
+        self.enJaque, self.clavadas, self.posiblesJaques = self.validarClavadasyJaques()
+
         if self.movimientoBlanca:
             filaRey = self.ubicacionReyBlanco[0]
             colRey = self.ubicacionReyBlanco[1]
         else:
             filaRey = self.ubicacionReyNegro[0]
             colRey = self.ubicacionReyNegro[1]
-
-        if self.en_Jaque:
-            if len(self.posiblesJaques) == 1:  # Solo 1 Jaque, jaque bloqueado o movimiento de rey
-                movimientos = self.traerTodosMovimientosPosibles()
-                # Para bloquear un jaque debes de mover una pieza en una entre medio de los cuadrados de la pieza del enemigo y el rey
-                jaque = self.posiblesJaques[0]  # informacion del Jaque
+        if self.enJaque:
+            if len(self.posiblesJaques) == 1:  # only 1 jaque, block the jaque or movimiento the king
+                movimientos = self.traerMovimientosPosibles()
+                # to block the jaque you must put a piece into one of the squares between the enemy piece and your king
+                jaque = self.posiblesJaques[0]  # jaque information
                 filaJaque = jaque[0]
                 colJaque = jaque[1]
-                piezaEnJaque = self.tablero[filaJaque][colJaque]  # Pieza enemiga causando el Jaque
-                cuadradosValidos = []  # Cuadrados que la pieza pueda mover
-
-                if piezaEnJaque[1] == 'C':
+                piezaEnJaque = self.tablero[filaJaque][colJaque]
+                cuadradosValidos = []  # squares that pieces can movimiento to
+                # if knight, must capture the knight or movimiento your king, other pieces can be blocked
+                if piezaEnJaque[1] == "N":
                     cuadradosValidos = [(filaJaque, colJaque)]
                 else:
                     for i in range(1, 8):
-                        cuadradoValido = (
-                            filaRey + jaque[2] * i,
-                            colRey + jaque[3] * i)  # Jaque[2] y Jaque[3] son las direcciones del Jaque
+                        cuadradoValido = (filaRey + jaque[2] * i,
+                                          colRey + jaque[3] * i)  # jaque[2] and jaque[3] are the jaque direcciones
                         cuadradosValidos.append(cuadradoValido)
-                        if cuadradoValido[0] == filaJaque and cuadradoValido[1] == colJaque:
+                        if cuadradoValido[0] == filaJaque and cuadradoValido[
+                            1] == colJaque:  # once you get to piece and jaque
                             break
-                for i in range(len(movimientos) - 1, -1, -1):
-                    if movimientos[i].piezaMovida[1] != 'R':
-                        if not (movimientos[i].filaFinal, movimientos[i].columnaFinal) in cuadradosValidos:
+                # get rid of any movimientos that don't block jaque or movimiento king
+                for i in range(len(movimientos) - 1, -1,
+                               -1):  # iterate through the list backwards when removing elements
+                    if movimientos[i].piezaMovida[
+                        1] != "K":  # movimiento doesn't movimiento king so it must block or capture
+                        if not (movimientos[i].filaFinal,
+                                movimientos[
+                                    i].columnaFinal) in cuadradosValidos:  # movimiento doesn't block or capture piece
                             movimientos.remove(movimientos[i])
-            else:
-                self.getMovimientoRey(filaRey, colRey, movimientos)
-        else:
-            movimientos = self.traerTodosMovimientosPosibles()
+            else:  # double jaque, king has to movimiento
+                self.movimientosRey(filaRey, colRey, movimientos)
+        else:  # not in jaque - all movimientos are fine
+            movimientos = self.traerMovimientosPosibles()
             if self.movimientoBlanca:
-                self.getMovimientosEnroque(self.ubicacionReyBlanco[0], self.ubicacionReyBlanco[1], movimientos)
+                self.movimientosEnroque(self.ubicacionReyBlanco[0], self.ubicacionReyBlanco[1], movimientos)
             else:
-                self.getMovimientosEnroque(self.ubicacionReyNegro[0], self.ubicacionReyNegro[1], movimientos)
+                self.movimientosEnroque(self.ubicacionReyNegro[0], self.ubicacionReyNegro[1], movimientos)
 
         if len(movimientos) == 0:
-            if self.enJaque():
+            if self.estaEnJaque():
                 self.jaqueMate = True
             else:
+                # TODO tablas on repeated movimientos
                 self.tablas = True
         else:
             self.jaqueMate = False
@@ -197,22 +231,31 @@ class EstadoJuego:
         self.enroque = enroqueTemp
         return movimientos
 
-    def enJaque(self):
+    def estaEnJaque(self):
+        """
+        Determine if a current player is in jaque
+        """
         if self.movimientoBlanca:
             return self.cuadradoBajoAtaque(self.ubicacionReyBlanco[0], self.ubicacionReyBlanco[1])
         else:
             return self.cuadradoBajoAtaque(self.ubicacionReyNegro[0], self.ubicacionReyNegro[1])
 
     def cuadradoBajoAtaque(self, f, c):
+        """
+        Determine if enemy can attack the casilla f c
+        """
+        self.movimientoBlanca = not self.movimientoBlanca  # switch to opponent's point of view
+        movEnemigo = self.traerMovimientosPosibles()
         self.movimientoBlanca = not self.movimientoBlanca
-        movEnemigo = self.traerTodosMovimientosPosibles()
-        self.movimientoBlanca = not self.movimientoBlanca
-        for mov in movEnemigo:
-            if mov.filaFinal == f and mov.columnaFinal == c:
+        for movimiento in movEnemigo:
+            if movimiento.filaFinal == f and movimiento.columnaFinal == c:  # casilla is under attack
                 return True
         return False
 
-    def traerTodosMovimientosPosibles(self):
+    def traerMovimientosPosibles(self):
+        """
+        All movimientos without considering posiblesJaques.
+        """
         movimientos = []
         for f in range(len(self.tablero)):
             for c in range(len(self.tablero[f])):
@@ -220,82 +263,87 @@ class EstadoJuego:
                 if (turno == 'b' and self.movimientoBlanca) or (turno == "n" and not self.movimientoBlanca):
                     pieza = self.tablero[f][c][1]
                     if pieza == 'P':
-                        self.getMovimientoPeon(f, c, movimientos)
+                        self.movimientosPeon(f, c, movimientos)
                     elif pieza == 'T':
-                        self.getMovimientoTorre(f, c, movimientos)
+                        self.movimientosTorre(f, c, movimientos)
                     elif pieza == 'A':
-                        self.getMovimientosAlfil(f, c, movimientos)
+                        self.movimientosAlfil(f, c, movimientos)
                     elif pieza == 'C':
-                        self.getMovimientoCaballo(f, c, movimientos)
+                        self.movimientosCaballo(f, c, movimientos)
                     elif pieza == 'Q':
-                        self.getMovimientoQueen(f, c, movimientos)
+                        self.movimientosReina(f, c, movimientos)
                     elif pieza == 'R':
-                        self.getMovimientoRey(f, c, movimientos)
+                        self.movimientosRey(f, c, movimientos)
         return movimientos
 
-    def validarClavadayJaques(self):
-        clavadas = []
-        posiblesJaques = []
-        en_Jaque = False
+    def validarClavadasyJaques(self):
+        clavadas = []  # squares pinned and the d its pinned from
+        posiblesJaques = []  # squares where enemy is applying a jaque
+        enJaque = False
         if self.movimientoBlanca:
             colorEnemigo = "n"
-            colorAliado = "b"
+            colorAliade = "b"
             filaInicial = self.ubicacionReyBlanco[0]
-            colInicial = self.ubicacionReyBlanco[1]
+            columnaInicial = self.ubicacionReyBlanco[1]
         else:
             colorEnemigo = "b"
-            colorAliado = "n"
+            colorAliade = "n"
             filaInicial = self.ubicacionReyNegro[0]
-            colInicial = self.ubicacionReyNegro[1]
+            columnaInicial = self.ubicacionReyNegro[1]
+        # jaque outwards from king for clavadas and posiblesJaques, keep track of clavadas
         direcciones = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
         for j in range(len(direcciones)):
             d = direcciones[j]
-            posibleClavada = ()
+            posibleClavada = ()  # reset possible clavadas
             for i in range(1, 8):
                 filaFinal = filaInicial + d[0] * i
-                colFinal = colInicial + d[1] * i
-                if 0 <= filaFinal < 8 and 0 <= colFinal < 8:
-                    piezaFinal = self.tablero[filaFinal][colFinal]
-                    if piezaFinal[0] == colorAliado and piezaFinal[1] != 'R':
-                        if posibleClavada == ():
-                            posibleClavada = (filaFinal, colFinal, d[0], d[1])
-                        else:
+                columnaFinal = columnaInicial + d[1] * i
+                if 0 <= filaFinal <= 7 and 0 <= columnaFinal <= 7:
+                    piezaFinal = self.tablero[filaFinal][columnaFinal]
+                    if piezaFinal[0] == colorAliade and piezaFinal[1] != "R":
+                        if posibleClavada == ():  # first allied piece could be pinned
+                            posibleClavada = (filaFinal, columnaFinal, d[0], d[1])
+                        else:  # 2nd allied piece - no jaque or pin from this d
                             break
                     elif piezaFinal[0] == colorEnemigo:
                         tipo = piezaFinal[1]
-                        # verificar vertical horizontal por si son torres
-                        # verificar diagonales por si son alfiles
-                        # 1 cuadrado en diagonal para los peones
-                        # cualquier direccion para la reina
-                        # cualquier direccion pero solo a un bloque de distancia para los reyes
-                        if (0 <= j <= 3 and tipo == 'T') or (4 <= j <= 7 and tipo == 'A') or (
-                                i == 1 and tipo == 'P' and (
-                                (colorEnemigo == 'b' and 6 <= j <= 7) or (colorEnemigo == 'n' and 4 <= j <= 5))) or (
-                                tipo == 'Q') or (i == 1 and tipo == 'R'):
-                            if posibleClavada == ():
-                                en_Jaque = True
-                                posiblesJaques.append((filaFinal, colFinal, d[0], d[1]))
+                        # 5 possibilities in this complex conditional
+                        # 1.) orthogonally away from king and piece is a rook
+                        # 2.) diagonally away from king and piece is a bishop
+                        # 3.) 1 casilla away diagonally from king and piece is a pawn
+                        # 4.) any d and piece is a queen
+                        # 5.) any d 1 casilla away and piece is a king
+                        if (0 <= j <= 3 and tipo == "T") or (4 <= j <= 7 and tipo == "A") or (
+                                i == 1 and tipo == "P" and (
+                                (colorEnemigo == "b" and 6 <= j <= 7) or (colorEnemigo == "n" and 4 <= j <= 5))) or (
+                                tipo == "Q") or (i == 1 and tipo == "R"):
+                            if posibleClavada == ():  # no piece blocking, so jaque
+                                enJaque = True
+                                posiblesJaques.append((filaFinal, columnaFinal, d[0], d[1]))
                                 break
-                            else:
+                            else:  # piece blocking so pin
                                 clavadas.append(posibleClavada)
                                 break
-                        else:
+                        else:  # enemy piece not applying posiblesJaques
                             break
                 else:
-                    break
-        # jaque para caballo
+                    break  # off tablero
+        # jaque for knight posiblesJaques
         movimientosCaballo = ((-2, -1), (-2, 1), (-1, 2), (1, 2), (2, -1), (2, 1), (-1, -2), (1, -2))
-        for m in movimientosCaballo:
-            filaFinal = filaInicial + m[0]
-            colFinal = colInicial + m[1]
-            if 0 <= filaFinal < 8 and 0 <= colFinal < 8:
-                piezaFinal = self.tablero[filaFinal][colFinal]
-                if piezaFinal[0] == colorEnemigo and piezaFinal[1] == 'C':
-                    en_Jaque = True
-                    posiblesJaques.append((filaFinal, colFinal, m[0], m[1]))
-        return en_Jaque, clavadas, posiblesJaques
+        for movimiento in movimientosCaballo:
+            filaFinal = filaInicial + movimiento[0]
+            columnaFinal = columnaInicial + movimiento[1]
+            if 0 <= filaFinal <= 7 and 0 <= columnaFinal <= 7:
+                piezaFinal = self.tablero[filaFinal][columnaFinal]
+                if piezaFinal[0] == colorEnemigo and piezaFinal[1] == "N":  # enemy knight attacking a king
+                    enJaque = True
+                    posiblesJaques.append((filaFinal, columnaFinal, movimiento[0], movimiento[1]))
+        return enJaque, clavadas, posiblesJaques
 
-    def getMovimientoPeon(self, f, c, movimientos):
+    def movimientosPeon(self, f, c, movimientos):
+        """
+        Get all the pawn movimientos for the pawn located at f, c and add the movimientos to the list.
+        """
         piezaClavada = False
         direccionClavada = ()
         for i in range(len(self.clavadas) - 1, -1, -1):
@@ -315,24 +363,25 @@ class EstadoJuego:
             filaInicial = 1
             colorEnemigo = "b"
             filaRey, colRey = self.ubicacionReyNegro
-        if self.tablero[f + cantidadMov][c] == "--":
+
+        if self.tablero[f + cantidadMov][c] == "--":  # 1 casilla pawn advance
             if not piezaClavada or direccionClavada == (cantidadMov, 0):
                 movimientos.append(Mover((f, c), (f + cantidadMov, c), self.tablero))
-                if f == filaInicial and self.tablero[f + 2 * cantidadMov][c] == "--":
-                    movimientos.append(
-                        Mover((f, c), (f + 2 * cantidadMov, c), self.tablero))
-        if c - 1 >= 0:
+                if f == filaInicial and self.tablero[f + 2 * cantidadMov][c] == "--":  # 2 casilla pawn advance
+                    movimientos.append(Mover((f, c), (f + 2 * cantidadMov, c), self.tablero))
+        if c - 1 >= 0:  # capture to the left
             if not piezaClavada or direccionClavada == (cantidadMov, -1):
                 if self.tablero[f + cantidadMov][c - 1][0] == colorEnemigo:
-                    movimientos.append(
-                        Mover((f, c), (f + cantidadMov, c - 1), self.tablero))
+                    movimientos.append(Mover((f, c), (f + cantidadMov, c - 1), self.tablero))
                 if (f + cantidadMov, c - 1) == self.capturaAlPasoPosible:
                     piezaEnAtaque = piezaEnBloqueo = False
                     if filaRey == f:
-                        if filaRey < c:
+                        if colRey < c:  # king is left of the pawn
+                            # inside: between king and the pawn;
+                            # outside: between pawn and border;
                             dentroDeRango = range(colRey + 1, c - 1)
                             fueraDeRango = range(c + 1, 8)
-                        else:
+                        else:  # king right of the pawn
                             dentroDeRango = range(colRey - 1, c, -1)
                             fueraDeRango = range(c - 2, -1, -1)
                         for i in dentroDeRango:
@@ -340,71 +389,103 @@ class EstadoJuego:
                                 piezaEnBloqueo = True
                         for i in fueraDeRango:
                             casilla = self.tablero[f][i]
-                            if casilla[0] == colorEnemigo and (casilla[1] == "R" or casilla[1] == "Q"):
+                            if casilla[0] == colorEnemigo and (casilla[1] == "T" or casilla[1] == "Q"):
                                 piezaEnAtaque = True
                             elif casilla != "--":
                                 piezaEnBloqueo = True
                     if not piezaEnAtaque or piezaEnBloqueo:
                         movimientos.append(
                             Mover((f, c), (f + cantidadMov, c - 1), self.tablero, movimientoCapturaAlPaso=True))
-        if c + 1 <= 7:
+        if c + 1 <= 7:  # capture to the right
             if not piezaClavada or direccionClavada == (cantidadMov, +1):
                 if self.tablero[f + cantidadMov][c + 1][0] == colorEnemigo:
                     movimientos.append(Mover((f, c), (f + cantidadMov, c + 1), self.tablero))
                 if (f + cantidadMov, c + 1) == self.capturaAlPasoPosible:
                     piezaEnAtaque = piezaEnBloqueo = False
                     if filaRey == f:
-                        if colRey < c:
+                        if colRey < c:  # king is left of the pawn
+                            # inside: between king and the pawn;
+                            # outside: between pawn and border;
                             dentroDeRango = range(colRey + 1, c)
                             fueraDeRango = range(c + 2, 8)
-                        else:
+                        else:  # king right of the pawn
                             dentroDeRango = range(colRey - 1, c + 1, -1)
                             fueraDeRango = range(c - 1, -1, -1)
                         for i in dentroDeRango:
-                            if self.tablero[f][i] != "--":
+                            if self.tablero[f][i] != "--":  # some piece beside en-passant pawn blocks
                                 piezaEnBloqueo = True
                         for i in fueraDeRango:
-                            square = self.tablero[f][i]
-                            if square[0] == colorEnemigo and (square[1] == "R" or square[1] == "Q"):
+                            casilla = self.tablero[f][i]
+                            if casilla[0] == colorEnemigo and (casilla[1] == "T" or casilla[1] == "Q"):
                                 piezaEnAtaque = True
-                            elif square != "--":
+                            elif casilla != "--":
                                 piezaEnBloqueo = True
                     if not piezaEnAtaque or piezaEnBloqueo:
                         movimientos.append(
                             Mover((f, c), (f + cantidadMov, c + 1), self.tablero, movimientoCapturaAlPaso=True))
 
-    def getMovimientoTorre(self, f, c, movimientos):
+    def movimientosTorre(self, f, c, movimientos):
+        """
+        Get all the rook movimientos for the rook located at f, c and add the movimientos to the list.
+        """
         piezaClavada = False
         direccionClavada = ()
         for i in range(len(self.clavadas) - 1, -1, -1):
             if self.clavadas[i][0] == f and self.clavadas[i][1] == c:
                 piezaClavada = True
                 direccionClavada = (self.clavadas[i][2], self.clavadas[i][3])
-                if self.tablero[f][c][1] != 'Q':
+                if self.tablero[f][c][
+                    1] != "Q":  # can't remove queen from pin on rook movimientos, only remove it on bishop movimientos
                     self.clavadas.remove(self.clavadas[i])
                 break
-        direcciones = ((-1, 0), (0, -1), (1, 0), (0, 1))
-        colorEnemigo = 'n' if self.movimientoBlanca else 'b'
 
+        direcciones = ((-1, 0), (0, -1), (1, 0), (0, 1))  # up, left, down, right
+        colorEnemigo = "n" if self.movimientoBlanca else "b"
         for d in direcciones:
             for i in range(1, 8):
                 filaFinal = f + d[0] * i
-                colFinal = c + d[1] * i
-
-                if 0 <= filaFinal < 8 and 0 <= colFinal < 8:
-                    if not piezaClavada or direccionClavada == d or direccionClavada == (-d[0], -d[1]):
-                        piezaFinal = self.tablero[filaFinal][colFinal]
-                        if piezaFinal == "--":
-                            movimientos.append(Mover((f, c), (filaFinal, colFinal), self.tablero))
-                        elif piezaFinal[0] == colorEnemigo:
-                            movimientos.append(Mover((f, c), (filaFinal, colFinal), self.tablero))
+                columnaFinal = c + d[1] * i
+                if 0 <= filaFinal <= 7 and 0 <= columnaFinal <= 7:  # jaque for possible movimientos only in boundaries of the tablero
+                    if not piezaClavada or direccionClavada == d or direccionClavada == (
+                            -d[0], -d[1]):
+                        piezaFinal = self.tablero[filaFinal][columnaFinal]
+                        if piezaFinal == "--":  # empty space is valid
+                            movimientos.append(Mover((f, c), (filaFinal, columnaFinal), self.tablero))
+                        elif piezaFinal[0] == colorEnemigo:  # capture enemy piece
+                            movimientos.append(Mover((f, c), (filaFinal, columnaFinal), self.tablero))
                             break
-                        else:
+                        else:  # friendly piece
                             break
-                else:
+                else:  # off tablero
                     break
 
-    def getMovimientosAlfil(self, f, c, movimientos):
+    def movimientosCaballo(self, f, c, movimientos):
+        """
+        Get all the knight movimientos for the knight located at f c and add the movimientos to the list.
+        """
+        piezaClavada = False
+        for i in range(len(self.clavadas) - 1, -1, -1):
+            if self.clavadas[i][0] == f and self.clavadas[i][1] == c:
+                piezaClavada = True
+                self.clavadas.remove(self.clavadas[i])
+                break
+
+        movimientosCaballo = ((-2, -1), (-2, 1), (-1, 2), (1, 2), (2, -1), (2, 1), (-1, -2),
+                              (1, -2))  # up/left up/right right/up right/down down/left down/right left/up left/down
+        colorAliade = "b" if self.movimientoBlanca else "n"
+        for movimiento in movimientosCaballo:
+            filaFinal = f + movimiento[0]
+            columnaFinal = c + movimiento[1]
+            if 0 <= filaFinal <= 7 and 0 <= columnaFinal <= 7:
+                if not piezaClavada:
+                    piezaFinal = self.tablero[filaFinal][columnaFinal]
+                    if piezaFinal[0] != colorAliade:  # so its either enemy piece or empty casilla
+                        movimientos.append(Mover((f, c), (filaFinal, columnaFinal), self.tablero))
+
+    def movimientosAlfil(self, f, c, movimientos):
+        """
+        Get all the bishop movimientos for the bishop located at f c and add the movimientos to the list.
+        """
         piezaClavada = False
         direccionClavada = ()
         for i in range(len(self.clavadas) - 1, -1, -1):
@@ -413,111 +494,102 @@ class EstadoJuego:
                 direccionClavada = (self.clavadas[i][2], self.clavadas[i][3])
                 self.clavadas.remove(self.clavadas[i])
                 break
-        direcciones = ((-1, -1), (-1, 1), (1, 1), (1, -1))
-        colorEnemigo = 'n' if self.movimientoBlanca else 'b'
+
+        direcciones = ((-1, -1), (-1, 1), (1, 1), (1, -1))  # diagonals: up/left up/right down/right down/left
+        colorEnemigo = "n" if self.movimientoBlanca else "b"
         for d in direcciones:
             for i in range(1, 8):
                 filaFinal = f + d[0] * i
-                colFinal = c + d[1] * i
-                if 0 <= filaFinal < 8 and 0 <= colFinal < 8:
-                    if not piezaClavada or direccionClavada == d or direccionClavada == (-d[0], -d[1]):
-                        piezaFinal = self.tablero[filaFinal][colFinal]
-                        if piezaFinal == "--":
-                            movimientos.append(Mover((f, c), (filaFinal, colFinal), self.tablero))
-                        elif piezaFinal[0] == colorEnemigo:
-                            movimientos.append(Mover((f, c), (filaFinal, colFinal), self.tablero))
+                columnaFinal = c + d[1] * i
+                if 0 <= filaFinal <= 7 and 0 <= columnaFinal <= 7:  # jaque if the movimiento is on tablero
+                    if not piezaClavada or direccionClavada == d or direccionClavada == (
+                            -d[0], -d[1]):
+                        piezaFinal = self.tablero[filaFinal][columnaFinal]
+                        if piezaFinal == "--":  # empty space is valid
+                            movimientos.append(Mover((f, c), (filaFinal, columnaFinal), self.tablero))
+                        elif piezaFinal[0] == colorEnemigo:  # capture enemy piece
+                            movimientos.append(Mover((f, c), (filaFinal, columnaFinal), self.tablero))
                             break
-                        else:
+                        else:  # friendly piece
                             break
-                else:
+                else:  # off tablero
                     break
 
-    def getMovimientoCaballo(self, f, c, movimientos):
-        piezaClavada = False
-        for i in range(len(self.clavadas) - 1, -1, -1):
-            if self.clavadas[i][0] == f and self.clavadas[i][1] == c:
-                piezaClavada = True
-                self.clavadas.remove(self.clavadas[i])
-                break
+    def movimientosReina(self, f, c, movimientos):
+        """
+        Get all the queen movimientos for the queen located at f c and add the movimientos to the list.
+        """
+        self.movimientosAlfil(f, c, movimientos)
+        self.movimientosTorre(f, c, movimientos)
 
-        direcciones = ((-2, -1), (-2, 1), (-1, 2), (1, 2), (2, -1), (2, 1), (-1, -2), (1, -2))
-        colorAliado = 'b' if self.movimientoBlanca else 'n'
-
-        for d in direcciones:
-            filaFinal = f + d[0]
-            colFinal = c + d[1]
-            if 0 <= filaFinal < 8 and 0 <= colFinal < 8:
-                if not piezaClavada:
-                    finalPieza = self.tablero[filaFinal][colFinal]
-                    if finalPieza[0] != colorAliado:
-                        movimientos.append(Mover((f, c), (filaFinal, colFinal), self.tablero))
-
-    def getMovimientoQueen(self, f, c, movimientos):
-        # alargar condigo poniendo las dos funciones en una sola
-        self.getMovimientosAlfil(f, c, movimientos)
-        self.getMovimientoTorre(f, c, movimientos)
-
-    def getMovimientoRey(self, f, c, movimientos):
-        movimientoFilas = (-1, -1, -1, 0, 0, 1, 1, 1)
-        movimientoColumnas = (-1, 0, 1, -1, 1, -1, 0, 1)
-        # direcciones = ((-1, -1), (1, 1), (-1, 1), (-1, 1), (-1, 0), (0, -1), (1, 0), (0, 1))
-        colorAliado = 'b' if self.movimientoBlanca else 'n'
+    def movimientosRey(self, f, c, movimientos):
+        """
+        Get all the king movimientos for the king located at f c and add the movimientos to the list.
+        """
+        movimientosFila = (-1, -1, -1, 0, 0, 1, 1, 1)
+        movimientosColumna = (-1, 0, 1, -1, 1, -1, 0, 1)
+        colorAliade = "b" if self.movimientoBlanca else "n"
         for i in range(8):
-            filaFinal = f + movimientoFilas[i]
-            colFinal = c + movimientoColumnas[i]
-            if 0 <= filaFinal < 8 and 0 <= colFinal < 8:
-                finalPieza = self.tablero[filaFinal][colFinal]
-                if finalPieza[0] != colorAliado:
-                    if colorAliado == 'b':
-                        self.ubicacionReyBlanco = (filaFinal, colFinal)
+            filaFinal = f + movimientosFila[i]
+            columnaFinal = c + movimientosColumna[i]
+            if 0 <= filaFinal <= 7 and 0 <= columnaFinal <= 7:
+                piezaFinal = self.tablero[filaFinal][columnaFinal]
+                if piezaFinal[0] != colorAliade:  # not an ally piece - empty or enemy
+                    # place king on end casilla and jaque for posiblesJaques
+                    if colorAliade == "b":
+                        self.ubicacionReyBlanco = (filaFinal, columnaFinal)
                     else:
-                        self.ubicacionReyNegro = (filaFinal, colFinal)
-                    en_Jaque, clavadas, posiblesJaques = self.validarClavadayJaques()
-                    if not en_Jaque:
-                        movimientos.append(Mover((f, c), (filaFinal, colFinal), self.tablero))
-                    if colorAliado == 'b':
+                        self.ubicacionReyNegro = (filaFinal, columnaFinal)
+                    enJaque, clavadas, posiblesJaques = self.validarClavadasyJaques()
+                    if not enJaque:
+                        movimientos.append(Mover((f, c), (filaFinal, columnaFinal), self.tablero))
+                    # place king back on original location
+                    if colorAliade == "b":
                         self.ubicacionReyBlanco = (f, c)
                     else:
                         self.ubicacionReyNegro = (f, c)
 
-    # Movimientos castillo
-    def getMovimientosEnroque(self, f, c, movimientos):
+    def movimientosEnroque(self, f, c, movimientos):
+        """
+        Generate all valid castle movimientos for the king at (f, c) and add them to the list of movimientos.
+        """
         if self.cuadradoBajoAtaque(f, c):
-            return
-        if (self.movimientoBlanca and self.enroque.reyBlanco) or (not self.movimientoBlanca and self.enroque.reyNegro):
-            self.getMovimientosReyAdyacenteTorre(f, c, movimientos)
-        if (self.movimientoBlanca and self.enroque.reinaBlanca) or (
-                not self.movimientoBlanca and self.enroque.reinaNegra):
-            self.getMovimientosReinaAdyacenteTorre(f, c, movimientos)
+            return  # can't castle while in jaque
+        if (self.movimientoBlanca and self.enroque.ReyBlanco) or (
+                not self.movimientoBlanca and self.enroque.ReyNegro):
+            self.traerMovimientosReyAdyacenteTorre(f, c, movimientos)
+        if (self.movimientoBlanca and self.enroque.ReinaBlanca) or (
+                not self.movimientoBlanca and self.enroque.ReinaNegra):
+            self.traerMovimientosReinaAdyacenteTorre(f, c, movimientos)
 
-    def getMovimientosReyAdyacenteTorre(self, f, c, movimientos):
+    def traerMovimientosReyAdyacenteTorre(self, f, c, movimientos):
         if self.tablero[f][c + 1] == '--' and self.tablero[f][c + 2] == '--':
             if not self.cuadradoBajoAtaque(f, c + 1) and not self.cuadradoBajoAtaque(f, c + 2):
                 movimientos.append(Mover((f, c), (f, c + 2), self.tablero, movimientoEnroque=True))
 
-    def getMovimientosReinaAdyacenteTorre(self, f, c, movimientos):
+    def traerMovimientosReinaAdyacenteTorre(self, f, c, movimientos):
         if self.tablero[f][c - 1] == '--' and self.tablero[f][c - 2] == '--' and self.tablero[f][c - 3] == '--':
             if not self.cuadradoBajoAtaque(f, c - 1) and not self.cuadradoBajoAtaque(f, c - 2):
                 movimientos.append(Mover((f, c), (f, c - 2), self.tablero, movimientoEnroque=True))
 
 
 class Enroque:
-    def __init__(self, reyBlanco, reyNegro, reinaBlanca, reinaNegra):
-        self.reyBlanco = reyBlanco
-        self.reyNegro = reyNegro
-        self.reinaBlanca = reinaBlanca
-        self.reinaNegra = reinaNegra
+    def __init__(self, ReyBlanco, ReyNegro, ReinaBlanca, ReinaNegra):
+        self.ReyBlanco = ReyBlanco
+        self.ReyNegro = ReyNegro
+        self.ReinaBlanca = ReinaBlanca
+        self.ReinaNegra = ReinaNegra
 
-
-# Lista de movimientos separados
 
 class Mover:
+    # in chess, fields on the tablero are described by two symbols, one of them being number between 1-8 (which is corresponding to rows)
+    # and the second one being a letter between a-f (corresponding to columns), in order to use this notation we need to map our [f][c] coordinates
+    # to match the ones used in the original chess game
     rangosFilas = {"1": 7, "2": 6, "3": 5, "4": 4,
                    "5": 3, "6": 2, "7": 1, "8": 0}
     filasRangos = {v: k for k, v in rangosFilas.items()}
     filasColumnas = {"a": 0, "b": 1, "c": 2, "d": 3,
                      "e": 4, "f": 5, "g": 6, "h": 7}
-
     columnasFilas = {v: k for k, v in filasColumnas.items()}
 
     def __init__(self, casInicial, casFinal, tablero, movimientoCapturaAlPaso=False, movimientoEnroque=False):
@@ -527,24 +599,69 @@ class Mover:
         self.columnaFinal = casFinal[1]
         self.piezaMovida = tablero[self.filaInicial][self.columnaInicial]
         self.piezaCapturada = tablero[self.filaFinal][self.columnaFinal]
+        # pawn promotion
         self.coronacionPeon = (self.piezaMovida == "bP" and self.filaFinal == 0) or (
                 self.piezaMovida == "nP" and self.filaFinal == 7)
+        # en passant
         self.movimientoCapturaAlPaso = movimientoCapturaAlPaso
         if self.movimientoCapturaAlPaso:
             self.piezaCapturada = "bP" if self.piezaMovida == "nP" else "nP"
-
+        # castle movimiento
         self.movimientoEnroque = movimientoEnroque
 
-        self.movimientoID = self.filaInicial * 1000 + self.filaFinal * 100 + self.filaFinal * 10 + self.columnaFinal
+        self.estaCapturada = self.piezaCapturada != "--"
+        self.movimientoID = self.filaInicial * 1000 + self.columnaInicial * 100 + self.filaFinal * 10 + self.columnaFinal
 
-    def __eq__(self, otro):
-        if isinstance(otro, Mover):
-            return self.movimientoID == otro.movimientoID
+    def __eq__(self, other):
+        """
+        Overriding the equals method.
+        """
+        if isinstance(other, Mover):
+            return self.movimientoID == other.movimientoID
         return False
 
     def getNotacionAjedrez(self):
-        return self.getRangoFila(self.filaInicial, self.columnaInicial) + self.getRangoFila(self.filaFinal,
-                                                                                            self.columnaFinal)
+        if self.coronacionPeon:
+            return self.getRangoFila(self.filaFinal, self.columnaFinal) + "Q"
+        if self.movimientoEnroque:
+            if self.columnaFinal == 1:
+                return "0-0-0"
+            else:
+                return "0-0"
+        if self.movimientoCapturaAlPaso:
+            return self.getRangoFila(self.filaInicial, self.columnaInicial)[0] + "x" + self.getRangoFila(
+                self.filaFinal,
+                self.columnaFinal) + " e.P."
+        if self.piezaCapturada != "--":
+            if self.piezaMovida[1] == "P":
+                return self.getRangoFila(self.filaInicial, self.columnaInicial)[0] + "x" + self.getRangoFila(
+                    self.filaFinal,
+                    self.columnaFinal)
+            else:
+                return self.piezaMovida[1] + "x" + self.getRangoFila(self.filaFinal, self.columnaFinal)
+        else:
+            if self.piezaMovida[1] == "P":
+                return self.getRangoFila(self.filaFinal, self.columnaFinal)
+            else:
+                return self.piezaMovida[1] + self.getRangoFila(self.filaFinal, self.columnaFinal)
+
+        # TODO Disambiguating movimientos
 
     def getRangoFila(self, f, c):
         return self.columnasFilas[c] + self.filasRangos[f]
+
+    def __str__(self):
+        if self.movimientoEnroque:
+            return "0-0" if self.columnaFinal == 6 else "0-0-0"
+
+        casFinal = self.getRangoFila(self.filaFinal, self.columnaFinal)
+
+        if self.piezaMovida[1] == "P":
+            if self.estaCapturada:
+                return self.columnasFilas[self.columnaInicial] + "x" + casFinal
+            else:
+                return casFinal + "Q" if self.coronacionPeon else casFinal
+        movimientosReg = self.piezaMovida[1]
+        if self.estaCapturada:
+            movimientosReg += "x"
+        return movimientosReg + casFinal
