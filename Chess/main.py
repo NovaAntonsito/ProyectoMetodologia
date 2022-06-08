@@ -1,4 +1,4 @@
-#import pygame_gui
+import pygame_gui
 import pygame as p
 from Chess import Engine, AjedezIA
 from multiprocessing import Process, Queue
@@ -60,7 +60,7 @@ def main():
     juegoTerminado = False
     moveLogFuentes = p.font.SysFont("Console", 15, False, False)
     jugador1 = True
-    jugador2 = True
+    jugador2 = False
     modoB = False
     pensamientoIa = False
     movimientoRehecho = False
@@ -73,7 +73,7 @@ def main():
     posicionAnterior = ()
     clicksJugador = []
     # menuPricipal(pantalla,ejecutando,jugador1,jugador2)
-    #Coso = pygame_gui.UIManager((800, 600))
+    Coso = pygame_gui.UIManager((800, 600))
     while ejecutando:
         turnoHumano = (estadoJuego.movimientoBlanca and jugador1) or (not estadoJuego.movimientoBlanca and jugador2)
         for e in p.event.get():
