@@ -1,5 +1,7 @@
+#import pygame_gui
 import pygame as p
 from Chess import Engine, AjedezIA
+from multiprocessing import Process, Queue
 
 # Settings iniciales para PYGAME
 p.init()
@@ -47,19 +49,22 @@ def cargarImagenes():
 def main():
     p.init()
     pantalla = p.display.set_mode((ANCHO + MOVELOGPANELANCHO, ALTO))
-
+    BG = p.transform.scale(p.image.load("imagenes/fondo.png"), (SQ_SIZE, SQ_SIZE))
     reloj = p.time.Clock()
     pantalla.fill(p.Color(255, 255, 255))
     estadoJuego = Engine.EstadoJuego()
-    movimientosValidos = estadoJuego.traerMovimietosValidos()
+    movimientosValidos = estadoJuego.traerMovimientosValidos()
     movRealizado = False
     animar = False
     pausar = p.mixer.music.get_busy()
     juegoTerminado = False
     moveLogFuentes = p.font.SysFont("Console", 15, False, False)
     jugador1 = True
-    jugador2 = True
+    jugador2 = False
     modoB = False
+    pensamientoIa = False
+    movimientoRehecho = False
+    encontrarmov = None
 
     logo = p.image.load("imagenes/logo.png")
     p.display.set_icon(logo)
@@ -67,6 +72,8 @@ def main():
     ejecutando = True
     posicionAnterior = ()
     clicksJugador = []
+    # menuPricipal(pantalla,ejecutando,jugador1,jugador2)
+    #Coso = pygame_gui.UIManager((800, 600))
     while ejecutando:
         turnoHumano = (estadoJuego.movimientoBlanca and jugador1) or (not estadoJuego.movimientoBlanca and jugador2)
         for e in p.event.get():
@@ -99,17 +106,26 @@ def main():
                                 clicksJugador = [posicionAnterior]
                 elif e.type == p.KEYDOWN:
                     if e.key == p.K_z:  # z esta presionada
-                        estadoJuego.movAnterior()
+                        estadoJuego.deshacerMovimiento()
                         movRealizado = True
                         animar = False
+                        juegoTerminado = False
+                        if pensamientoIa:
+                            encontrarmov.terminate()
+                            pensamientoIa = False
+                        movimientoRehecho = True
                     if e.key == p.K_r:
                         estadoJuego = Engine.EstadoJuego()
-                        movimientosValidos = estadoJuego.traerMovimietosValidos()
+                        movimientosValidos = estadoJuego.traerMovimientosValidos()
                         posicionAnterior = ()
                         clicksJugador = []
                         movRealizado = False
                         animar = False
                         juegoTerminado = False
+                        if pensamientoIa:
+                            encontrarmov.terminate()
+                            pensamientoIa = False
+                        movimientoRehecho = True
                     if e.key == p.K_b:
                         p.mixer.quit()
                         p.mixer.init()
@@ -127,31 +143,44 @@ def main():
                             p.mixer.music.unpause()
                     pausar = not pausar
         # logica ia
-        if not juegoTerminado and not turnoHumano:
-            movimientoIA = AjedezIA.encontrarMejorMov(estadoJuego, movimientosValidos)
-            if movimientoIA is None:
-                movimientoIA = AjedezIA.encontrarMovimientoRandom(movimientosValidos)
-            estadoJuego.hacerMovimiento(movimientoIA)
-            movRealizado = True
-            animar = True
+        if not juegoTerminado and not turnoHumano and not movimientoRehecho:
+            if not pensamientoIa:
+                pensamientoIa = True
+                return_queue = Queue()
+                encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,args=(estadoJuego, movimientosValidos, return_queue))
+                encontrarmov.start()
+
+            if not encontrarmov.is_alive():
+                movimientoIA = return_queue.get()
+                if movimientoIA is None:
+                    movimientoIA = AjedezIA.encontrarMovimientoRandom(movimientosValidos)
+                estadoJuego.hacerMovimiento(movimientoIA)
+                movRealizado = True
+                animar = True
+                pensamientoIa = False
 
         if movRealizado:
             if animar:
                 animacionPiezas(estadoJuego.registroMov[-1], pantalla, estadoJuego.tablero, reloj, modoB)
-            movimientosValidos = estadoJuego.traerMovimietosValidos()
+            movimientosValidos = estadoJuego.traerMovimientosValidos()
             movRealizado = False
             animar = False
+            movimientoRehecho = False
 
         dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes, modoB)
 
-        if estadoJuego.enJaque:
+        if estadoJuego.jaqueMate or estadoJuego.tablas:
             juegoTerminado = True
-            if estadoJuego.movimientoBlanca:
-                mensaje = "Negro gana por jaque"
+            if estadoJuego.tablas:
+                mensaje = "empate"
                 dibujarTextos(pantalla, mensaje)
             else:
-                mensaje = "Blanca gana por jaque"
-                dibujarTextos(pantalla, mensaje)
+                if estadoJuego.movimientoBlanca:
+                    mensaje = "Negro gana por jaque"
+                    dibujarTextos(pantalla, mensaje)
+                else:
+                    mensaje = "Blanca gana por jaque"
+                    dibujarTextos(pantalla, mensaje)
         reloj.tick(MAX_FPS)
         p.display.flip()
 
@@ -161,7 +190,7 @@ Dibuja las casillas del tablero
 '''
 
 
-def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes):
+def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes, modoB):
     moveLogPantalla = p.Rect(ANCHO, 0, MOVELOGPANELANCHO, MOVELOGPANELALTO)
     p.draw.rect(pantalla, p.Color("black"), moveLogPantalla)
     moveLog = estadoJuego.registroMov
@@ -184,19 +213,24 @@ def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes):
 
     espacioEntre = 20
 
-    for i in range(len(moveTexto)):
-        if (estadoJuego.movimientoBlanca):
-            texto1 = "Turno Blanca"
-            mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
-            ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-            textoY += mensajePantalla.get_height() + espacioEntre
-            pantalla.blit(mensajePantalla, ubicacionTexto)
-        else:
-            texto1 = "Turno Negra"
-            mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
-            ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-            textoY += mensajePantalla.get_height() + espacioEntre
-            pantalla.blit(mensajePantalla, ubicacionTexto)
+    if (estadoJuego.movimientoBlanca):
+        texto1 = "Turno Blanca"
+        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
+    else:
+        texto1 = "Turno Negra"
+        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
+    if modoB:
+        MODOBOCA = "VAMO BOQUITA"
+        mensajePantalla = moveLogFuentes.render(MODOBOCA, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
 
 
 def dibujarTablero(pantalla, modoB=False):
@@ -240,7 +274,7 @@ def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, m
     # Dibuja el tablero
     dibujarTablero(pantalla, modoB)
     resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
-    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes)
+    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes, modoB)
     dibujarPiezas(pantalla, estadoJuego.tablero)
 
     # Dibujando piezas en los casilleros de los extremos
@@ -276,8 +310,13 @@ def animacionPiezas(mover, pantalla, tablero, reloj, modoB=False):
         cuadradoFinal = p.Rect(mover.columnaFinal * SQ_SIZE, mover.filaFinal * SQ_SIZE, SQ_SIZE, SQ_SIZE)
         p.draw.rect(pantalla, color, cuadradoFinal)
         if mover.piezaCapturada != "--":
+            if mover.movimientoCapturaAlPaso:
+                capturaAlPasoFila = (mover.filaFinal + 1) if mover.piezaCapturada[0] == 'n' else (mover.filaFinal - 1)
+                cuadradoFinal = p.Rect(mover.columnaFinal * SQ_SIZE, capturaAlPasoFila * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+
             pantalla.blit(IMAGENES[mover.piezaCapturada], cuadradoFinal)
-        pantalla.blit(IMAGENES[mover.piezaMovida], p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+        if mover.piezaMovida != '--':
+            pantalla.blit(IMAGENES[mover.piezaMovida], p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
         p.display.flip()
         reloj.tick(60)
 
