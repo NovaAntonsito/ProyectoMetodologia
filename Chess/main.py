@@ -1,11 +1,19 @@
 #import pygame_gui
+import sys
+
 import pygame as p
 from Chess import Engine, AjedezIA
 from multiprocessing import Process, Queue
 
 # Settings iniciales para PYGAME
 p.init()
-ANCHO = ALTO = 512
+jugar_img = p.image.load("imagenes/JugarBotton.png")
+salir_img = p.image.load("imagenes/SalirBotton.png")
+regresar_img = p.image.load("imagenes/RegresarBotton.png")
+jvsj_img = p.image.load("imagenes/JvsJBotton.png")
+jvsIA_img = p.image.load("imagenes/JvsIABotton.png")
+
+ANCHO = ALTO = 500
 MOVELOGPANELANCHO = 250
 MOVELOGPANELALTO = ALTO
 DIMENSION = 8
@@ -16,8 +24,20 @@ p.mixer.init()
 p.mixer.music.load("Sonidos/Musica de fondo.wav")
 p.mixer.music.play(-1)
 p.mixer.music.set_volume(0.050)
+PANTALLA_MENU = (ANCHO, ALTO)
+PANTALLA_AJEDREZ = (ANCHO + MOVELOGPANELANCHO, ALTO)
+PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
 
 
+
+
+
+
+boton_jugar = Botones.boton(0,100,jugar_img,2)
+boton_salir = Botones.boton(0, 150, salir_img,2)
+boton_regresar = Botones.boton(100, 0, regresar_img,3)
+boton_JvsJ = Botones.boton(200, 50, jvsj_img,2)
+boton_JvsIA = Botones.boton(0, 50, jvsIA_img,2)
 def cargarImagenes():
     # Transformar las imagenes a una escala para el tablero
     IMAGENES["nA"] = p.transform.scale(
@@ -48,141 +68,199 @@ def cargarImagenes():
 
 def main():
     p.init()
-    pantalla = p.display.set_mode((ANCHO + MOVELOGPANELANCHO, ALTO))
-    BG = p.transform.scale(p.image.load("imagenes/fondo.png"), (SQ_SIZE, SQ_SIZE))
-    reloj = p.time.Clock()
-    pantalla.fill(p.Color(255, 255, 255))
-    estadoJuego = Engine.EstadoJuego()
-    movimientosValidos = estadoJuego.traerMovimientosValidos()
-    movRealizado = False
-    animar = False
-    pausar = p.mixer.music.get_busy()
-    juegoTerminado = False
-    moveLogFuentes = p.font.SysFont("Console", 15, False, False)
+    juegoCorriendo = True
+    menu = True
+
+    #Variables para el ajedrez
     jugador1 = True
     jugador2 = False
-    modoB = False
-    pensamientoIa = False
-    movimientoRehecho = False
-    encontrarmov = None
 
-    logo = p.image.load("imagenes/logo.png")
-    p.display.set_icon(logo)
-    cargarImagenes()
-    ejecutando = True
-    posicionAnterior = ()
-    clicksJugador = []
-    # menuPricipal(pantalla,ejecutando,jugador1,jugador2)
-    #Coso = pygame_gui.UIManager((800, 600))
-    while ejecutando:
-        turnoHumano = (estadoJuego.movimientoBlanca and jugador1) or (not estadoJuego.movimientoBlanca and jugador2)
-        for e in p.event.get():
-            if not juegoTerminado:
-                if e.type == p.QUIT:
-                    ejecutando = False
-                elif e.type == p.MOUSEBUTTONDOWN:
 
-                    if not juegoTerminado and turnoHumano:
-                        posicion = p.mouse.get_pos()  # posicion (x,y)
-                        col = posicion[0] // SQ_SIZE
-                        fil = posicion[1] // SQ_SIZE
-                        if posicionAnterior == (fil, col):
-                            posicionAnterior = ()
-                            clicksJugador = []
-                        else:
-                            posicionAnterior = (fil, col)
-                            clicksJugador.append(posicionAnterior)
-                        if len(clicksJugador) == 2:
-                            mover = Engine.Mover(
-                                clicksJugador[0], clicksJugador[1], estadoJuego.tablero)
-                            for i in range(len(movimientosValidos)):
-                                if mover == movimientosValidos[i]:
-                                    estadoJuego.hacerMovimiento(movimientosValidos[i])
-                                    movRealizado = True
-                                    animar = True
-                                    posicionAnterior = ()
-                                    clicksJugador = []
-                            if not movRealizado:
-                                clicksJugador = [posicionAnterior]
-                elif e.type == p.KEYDOWN:
-                    if e.key == p.K_z:  # z esta presionada
-                        estadoJuego.deshacerMovimiento()
-                        movRealizado = True
-                        animar = False
-                        juegoTerminado = False
-                        if pensamientoIa:
-                            encontrarmov.terminate()
-                            pensamientoIa = False
-                        movimientoRehecho = True
-                    if e.key == p.K_r:
-                        estadoJuego = Engine.EstadoJuego()
-                        movimientosValidos = estadoJuego.traerMovimientosValidos()
-                        posicionAnterior = ()
-                        clicksJugador = []
-                        movRealizado = False
-                        animar = False
-                        juegoTerminado = False
-                        if pensamientoIa:
-                            encontrarmov.terminate()
-                            pensamientoIa = False
-                        movimientoRehecho = True
-                    if e.key == p.K_b:
-                        p.mixer.quit()
-                        p.mixer.init()
-                        p.mixer.music.load("Sonidos/easteregg.wav")
-                        p.mixer.music.play(-1)
-                        modoB = True
-                    if e.key == p.K_m:
-                        p.mixer.music.set_volume(p.mixer.music.get_volume() + 0.05)
-                    if e.key == p.K_n:
-                        p.mixer.music.set_volume(p.mixer.music.get_volume() - 0.05)
-                    if e.key == p.K_t:
-                        if pausar:
-                            p.mixer.music.pause()
-                        else:
-                            p.mixer.music.unpause()
-                    pausar = not pausar
-        # logica ia
-        if not juegoTerminado and not turnoHumano and not movimientoRehecho:
-            if not pensamientoIa:
-                pensamientoIa = True
-                return_queue = Queue()
-                encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,args=(estadoJuego, movimientosValidos, return_queue))
-                encontrarmov.start()
-
-            if not encontrarmov.is_alive():
-                movimientoIA = return_queue.get()
-                if movimientoIA is None:
-                    movimientoIA = AjedezIA.encontrarMovimientoRandom(movimientosValidos)
-                estadoJuego.hacerMovimiento(movimientoIA)
-                movRealizado = True
-                animar = True
-                pensamientoIa = False
-
-        if movRealizado:
-            if animar:
-                animacionPiezas(estadoJuego.registroMov[-1], pantalla, estadoJuego.tablero, reloj, modoB)
+    while juegoCorriendo:
+        if not menu:
+            PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
+            boton_regresar.draw(PANTALLA)
+            BG = p.transform.scale(p.image.load("imagenes/fondo.png"), (SQ_SIZE, SQ_SIZE))
+            reloj = p.time.Clock()
+            PANTALLA.fill(p.Color(255, 255, 255))
+            estadoJuego = Engine.EstadoJuego()
             movimientosValidos = estadoJuego.traerMovimientosValidos()
             movRealizado = False
             animar = False
+            pausar = p.mixer.music.get_busy()
+            juegoTerminado = False
+            moveLogFuentes = p.font.SysFont("Console", 15, False, False)
+
+            modoB = False
+            pensamientoIa = False
             movimientoRehecho = False
+            encontrarmov = None
 
-        dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes, modoB)
+            logo = p.image.load("imagenes/logo.png")
+            p.display.set_icon(logo)
+            cargarImagenes()
+            ejecutando = True
+            posicionAnterior = ()
+            clicksJugador = []
+            tiempoRestante = 30;
+            aux=1;
+            while ejecutando:
+                if not juegoTerminado:
+                    tiempoPasado = int(p.time.get_ticks() / 1000)
+                    tiempoInicial = 5;
+                    tiempoRestante = tiempoInicial;
+                    if (tiempoPasado == aux):
+                        tiempoRestante = tiempoInicial - tiempoPasado;
+                        m, s = divmod(tiempoRestante, 60)
+                        min_sec_format = '{:02d}:{:02d}'.format(m, s)
+                        print(min_sec_format + '\r')
+                        aux += 1
+                turnoHumano = (estadoJuego.movimientoBlanca and jugador1) or (not estadoJuego.movimientoBlanca and jugador2)
+                for e in p.event.get():
+                    if e.type == p.QUIT:
+                        p.quit()
+                        sys.exit()
+                    elif e.type == p.MOUSEBUTTONDOWN:
+                        
+                    if not juegoTerminado:
+                        if e.type == p.QUIT:
+                            ejecutando = False
+                            juegoCorriendo = False
+                            if not juegoTerminado and turnoHumano:
+                                posicion = p.mouse.get_pos()  # posicion (x,y)
+                                col = posicion[0] // SQ_SIZE
+                                fil = posicion[1] // SQ_SIZE
+                                if posicionAnterior == (fil, col):
+                                    posicionAnterior = ()
+                                    clicksJugador = []
+                                else:
+                                    posicionAnterior = (fil, col)
+                                    clicksJugador.append(posicionAnterior)
+                                if len(clicksJugador) == 2:
+                                    mover = Engine.Mover(
+                                        clicksJugador[0], clicksJugador[1], estadoJuego.tablero)
+                                    for i in range(len(movimientosValidos)):
+                                        if mover == movimientosValidos[i]:
+                                            estadoJuego.hacerMovimiento(movimientosValidos[i])
+                                            movRealizado = True
+                                            animar = True
+                                            posicionAnterior = ()
+                                            clicksJugador = []
+                                    if not movRealizado:
+                                        clicksJugador = [posicionAnterior]
+                    elif e.type == p.KEYDOWN:
+                        if e.key == p.K_z:  # z esta presionada
+                            estadoJuego.deshacerMovimiento()
+                            movRealizado = True
+                            animar = False
+                            juegoTerminado = False
+                            if pensamientoIa:
+                                encontrarmov.terminate()
+                                pensamientoIa = False
+                            movimientoRehecho = True
+                        if e.key == p.K_r:
+                            estadoJuego = Engine.EstadoJuego()
+                            movimientosValidos = estadoJuego.traerMovimientosValidos()
+                            posicionAnterior = ()
+                            clicksJugador = []
+                            movRealizado = False
+                            animar = False
+                            juegoTerminado = False
+                            if pensamientoIa:
+                                encontrarmov.terminate()
+                                pensamientoIa = False
+                            movimientoRehecho = True
+                        if e.key == p.K_b:
+                            p.mixer.quit()
+                            p.mixer.init()
+                            p.mixer.music.load("Sonidos/easteregg.wav")
+                            p.mixer.music.play(-1)
+                            modoB = True
+                        if e.key == p.K_m:
+                            p.mixer.music.set_volume(p.mixer.music.get_volume() + 0.05)
+                        if e.key == p.K_n:
+                            p.mixer.music.set_volume(p.mixer.music.get_volume() - 0.05)
+                        if e.key == p.K_t:
+                            if pausar:
+                                p.mixer.music.pause()
+                            else:
+                                p.mixer.music.unpause()
+                        pausar = not pausar
 
-        if estadoJuego.jaqueMate or estadoJuego.tablas:
-            juegoTerminado = True
-            if estadoJuego.tablas:
-                mensaje = "empate"
-                dibujarTextos(pantalla, mensaje)
-            else:
-                if estadoJuego.movimientoBlanca:
-                    mensaje = "Negro gana por jaque"
-                    dibujarTextos(pantalla, mensaje)
-                else:
-                    mensaje = "Blanca gana por jaque"
-                    dibujarTextos(pantalla, mensaje)
-        reloj.tick(MAX_FPS)
-        p.display.flip()
+                # logica ia
+                if not juegoTerminado and not turnoHumano and not movimientoRehecho:
+                    if not pensamientoIa:
+                        pensamientoIa = True
+                        return_queue = Queue()
+                        encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,args=(estadoJuego, movimientosValidos, return_queue))
+                        encontrarmov.start()
+
+                    if not encontrarmov.is_alive():
+                        movimientoIA = return_queue.get()
+                        if movimientoIA is None:
+                            movimientoIA = AjedezIA.encontrarMovimientoRandom(movimientosValidos)
+                        estadoJuego.hacerMovimiento(movimientoIA)
+                        movRealizado = True
+                        animar = True
+                        pensamientoIa = False
+
+                if movRealizado:
+                    if animar:
+                        animacionPiezas(estadoJuego.registroMov[-1], PANTALLA, estadoJuego.tablero, reloj, modoB)
+                    movimientosValidos = estadoJuego.traerMovimientosValidos()
+                    movRealizado = False
+                    animar = False
+                    movimientoRehecho = False
+
+                dibujarEstado(PANTALLA, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes, modoB)
+
+                if estadoJuego.jaqueMate or estadoJuego.tablas or tiempoRestante == 0:
+                    juegoTerminado = True
+                    if estadoJuego.tablas:
+                        mensaje = "empate"
+                        dibujarTextos(PANTALLA, mensaje)
+                    elif estadoJuego.jaqueMate:
+                        if estadoJuego.movimientoBlanca:
+                            mensaje = "Negro gana por jaque"
+                            dibujarTextos(PANTALLA, mensaje)
+                        else:
+                            mensaje = "Blanca gana por jaque"
+                            dibujarTextos(PANTALLA, mensaje)
+                    elif tiempoRestante == 0:
+                        if estadoJuego.movimientoBlanca:
+                            mensaje = "Negro gana por tiempo"
+                            dibujarTextos(PANTALLA, mensaje)
+                        else:
+                            mensaje = "Blanca gana por tiempo"
+                            dibujarTextos(PANTALLA, mensaje)
+                reloj.tick(MAX_FPS)
+                p.display.flip()
+
+
+                p.display.update()
+        else:
+            print("Menu")
+            PANTALLA = p.display.set_mode(PANTALLA_MENU)
+            PANTALLA.fill(p.Color("Black"))
+            ejecutandoMenu = True
+
+            while ejecutandoMenu:
+                if boton_JvsJ.draw(PANTALLA):
+                    jugador2 = True
+                    ejecutandoMenu = False
+                    menu = False
+                if boton_JvsIA.draw(PANTALLA):
+                    jugador2 = False
+                    ejecutandoMenu = False
+                    menu = False
+                if boton_salir.draw(PANTALLA):
+                    ejecutandoMenu = False
+                    juegoCorriendo = False
+                for e in p.event.get():
+                    if e.type == p.QUIT:
+                        ejecutandoMenu = False
+                        juegoCorriendo = False
+                p.display.update()
 
 
 '''
@@ -323,7 +401,7 @@ def animacionPiezas(mover, pantalla, tablero, reloj, modoB=False):
 
 def dibujarTextos(pantalla, mensaje):
     fuente = p.font.SysFont("Helvitca", 32, True, False)
-    mensajePantalla = fuente.render(mensaje, False, p.Color("Gray"))
+    mensajePantalla = fuente.render(mensaje, 0, p.Color("Gray"))
     ubicacionTexto = p.Rect(0, 0, ANCHO, ALTO).move(ANCHO / 2 - mensajePantalla.get_width() / 2,
                                                     ALTO / 2 - mensajePantalla.get_height() / 2)
     pantalla.blit(mensajePantalla, ubicacionTexto)

@@ -1,6 +1,5 @@
 class EstadoJuego:
     def __init__(self):
-
         self.tablero = [
             ["nT", "nC", "nA", "nQ", "nR", "nA", "nC", "nT"],
             ["nP", "nP", "nP", "nP", "nP", "nP", "nP", "nP"],
