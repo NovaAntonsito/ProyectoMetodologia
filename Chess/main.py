@@ -1,9 +1,11 @@
-#import pygame_gui
+# import pygame_gui
 import sys
 
 import pygame as p
+import Botones,RenderImagen
 from Chess import Engine, AjedezIA
 from multiprocessing import Process, Queue
+import time
 
 # Settings iniciales para PYGAME
 p.init()
@@ -12,6 +14,11 @@ salir_img = p.image.load("imagenes/SalirBotton.png")
 regresar_img = p.image.load("imagenes/RegresarBotton.png")
 jvsj_img = p.image.load("imagenes/JvsJBotton.png")
 jvsIA_img = p.image.load("imagenes/JvsIABotton.png")
+titulo_img = p.image.load("imagenes/TituloAjedrez.png")
+reynaB_img = p.image.load("imagenes/bQ.png.")
+reyB_img = p.image.load("imagenes/bR.png")
+reynaN_img = p.image.load("imagenes/nQ.png.")
+reyN_img = p.image.load("imagenes/nR.png")
 
 ANCHO = ALTO = 500
 MOVELOGPANELANCHO = 250
@@ -24,7 +31,7 @@ p.mixer.init()
 p.mixer.music.load("Sonidos/Musica de fondo.wav")
 p.mixer.music.play(-1)
 p.mixer.music.set_volume(0.050)
-PANTALLA_MENU = (ANCHO, ALTO)
+PANTALLA_MENU = (ANCHO , ALTO)
 PANTALLA_AJEDREZ = (ANCHO + MOVELOGPANELANCHO, ALTO)
 PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
 
@@ -32,12 +39,6 @@ PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
 
 
 
-
-boton_jugar = Botones.boton(0,100,jugar_img,2)
-boton_salir = Botones.boton(0, 150, salir_img,2)
-boton_regresar = Botones.boton(100, 0, regresar_img,3)
-boton_JvsJ = Botones.boton(200, 50, jvsj_img,2)
-boton_JvsIA = Botones.boton(0, 50, jvsIA_img,2)
 def cargarImagenes():
     # Transformar las imagenes a una escala para el tablero
     IMAGENES["nA"] = p.transform.scale(
@@ -70,16 +71,14 @@ def main():
     p.init()
     juegoCorriendo = True
     menu = True
-
-    #Variables para el ajedrez
+    # Variables para el ajedrez
     jugador1 = True
     jugador2 = False
-
 
     while juegoCorriendo:
         if not menu:
             PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
-            boton_regresar.draw(PANTALLA)
+
             BG = p.transform.scale(p.image.load("imagenes/fondo.png"), (SQ_SIZE, SQ_SIZE))
             reloj = p.time.Clock()
             PANTALLA.fill(p.Color(255, 255, 255))
@@ -90,42 +89,45 @@ def main():
             pausar = p.mixer.music.get_busy()
             juegoTerminado = False
             moveLogFuentes = p.font.SysFont("Console", 15, False, False)
-
+            moveLogTimer = p.font.SysFont("Console", 20, True, False)
             modoB = False
+
             pensamientoIa = False
             movimientoRehecho = False
             encontrarmov = None
-
             logo = p.image.load("imagenes/logo.png")
             p.display.set_icon(logo)
             cargarImagenes()
             ejecutando = True
             posicionAnterior = ()
             clicksJugador = []
-            tiempoRestante = 30;
-            aux=1;
+            p.time.set_timer(p.USEREVENT, 1000)
+
             while ejecutando:
                 if not juegoTerminado:
-                    tiempoPasado = int(p.time.get_ticks() / 1000)
-                    tiempoInicial = 5;
-                    tiempoRestante = tiempoInicial;
-                    if (tiempoPasado == aux):
-                        tiempoRestante = tiempoInicial - tiempoPasado;
-                        m, s = divmod(tiempoRestante, 60)
-                        min_sec_format = '{:02d}:{:02d}'.format(m, s)
-                        print(min_sec_format + '\r')
-                        aux += 1
-                turnoHumano = (estadoJuego.movimientoBlanca and jugador1) or (not estadoJuego.movimientoBlanca and jugador2)
+                    turnoHumano = (estadoJuego.movimientoBlanca and jugador1) or (not estadoJuego.movimientoBlanca and jugador2)
+
                 for e in p.event.get():
+                    if not juegoTerminado:
+                        if e.type == p.USEREVENT:
+                            if estadoJuego.movimientoBlanca:
+                                estadoJuego.contadorBlanca -= 1
+                                m, s = divmod(estadoJuego.contadorBlanca, 60)
+                                print("Timer Blanca: "+'{:02d}:{:02d}'.format(m, s))
+                            else:
+                                estadoJuego.contadorNegra -= 1
+                                m, s = divmod(estadoJuego.contadorNegra, 60)
+                                print("Timer Negra: "+'{:02d}:{:02d}'.format(m, s))
+
                     if e.type == p.QUIT:
                         p.quit()
                         sys.exit()
                     elif e.type == p.MOUSEBUTTONDOWN:
-                        
-                    if not juegoTerminado:
-                        if e.type == p.QUIT:
-                            ejecutando = False
-                            juegoCorriendo = False
+                        if not juegoTerminado:
+                            '''if e.type == p.QUIT:
+                                ejecutando = False
+                                juegoCorriendo = False
+                               '''
                             if not juegoTerminado and turnoHumano:
                                 posicion = p.mouse.get_pos()  # posicion (x,y)
                                 col = posicion[0] // SQ_SIZE
@@ -160,6 +162,8 @@ def main():
                             movimientoRehecho = True
                         if e.key == p.K_r:
                             estadoJuego = Engine.EstadoJuego()
+                            estadoJuego.contadorBlanca = estadoJuego.contadorInicial
+                            estadoJuego.contadorBlanca = estadoJuego.contadorInicial
                             movimientosValidos = estadoJuego.traerMovimientosValidos()
                             posicionAnterior = ()
                             clicksJugador = []
@@ -192,7 +196,8 @@ def main():
                     if not pensamientoIa:
                         pensamientoIa = True
                         return_queue = Queue()
-                        encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,args=(estadoJuego, movimientosValidos, return_queue))
+                        encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,
+                                               args=(estadoJuego, movimientosValidos, return_queue))
                         encontrarmov.start()
 
                     if not encontrarmov.is_alive():
@@ -205,6 +210,7 @@ def main():
                         pensamientoIa = False
 
                 if movRealizado:
+
                     if animar:
                         animacionPiezas(estadoJuego.registroMov[-1], PANTALLA, estadoJuego.tablero, reloj, modoB)
                     movimientosValidos = estadoJuego.traerMovimientosValidos()
@@ -212,9 +218,9 @@ def main():
                     animar = False
                     movimientoRehecho = False
 
-                dibujarEstado(PANTALLA, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes, modoB)
+                dibujarEstado(PANTALLA, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer, modoB)
 
-                if estadoJuego.jaqueMate or estadoJuego.tablas or tiempoRestante == 0:
+                if estadoJuego.jaqueMate or estadoJuego.tablas or estadoJuego.contadorBlanca == 0 or estadoJuego.contadorNegra == 0:
                     juegoTerminado = True
                     if estadoJuego.tablas:
                         mensaje = "empate"
@@ -226,7 +232,7 @@ def main():
                         else:
                             mensaje = "Blanca gana por jaque"
                             dibujarTextos(PANTALLA, mensaje)
-                    elif tiempoRestante == 0:
+                    else:
                         if estadoJuego.movimientoBlanca:
                             mensaje = "Negro gana por tiempo"
                             dibujarTextos(PANTALLA, mensaje)
@@ -236,15 +242,31 @@ def main():
                 reloj.tick(MAX_FPS)
                 p.display.flip()
 
-
                 p.display.update()
         else:
             print("Menu")
             PANTALLA = p.display.set_mode(PANTALLA_MENU)
-            PANTALLA.fill(p.Color("Black"))
+            print(PANTALLA.get_width())
+            PANTALLA.fill(p.Color("Orange"))
             ejecutandoMenu = True
+            tituloComponente = RenderImagen.imagen((PANTALLA.get_width()/2)-(titulo_img.get_width()*4)/2, 20, titulo_img, 4)
+            reyB_Componente = RenderImagen.imagen(0,PANTALLA.get_height()-reyB_img.get_height(),reyB_img,1)
+            reynaB_Componente = RenderImagen.imagen(PANTALLA.get_width()-reynaB_img.get_width(),0,reynaB_img,1)
+            reyN_Componente = RenderImagen.imagen(PANTALLA.get_width()-reyN_img.get_width(),PANTALLA.get_height()-reyN_img.get_height(),reyN_img,1)
+            reynaN_Componente = RenderImagen.imagen(0,0,reynaN_img,1)
 
+
+            boton_salir = Botones.boton((PANTALLA.get_width()/2)-(salir_img.get_width()), 250, salir_img, 2)
+
+            boton_JvsIA = Botones.boton(20, 150, jvsIA_img, 2)
+            boton_JvsJ = Botones.boton(PANTALLA.get_width()-(jvsj_img.get_width()*2)-20, 150, jvsj_img, 2)
             while ejecutandoMenu:
+                tituloComponente.draw(PANTALLA)
+                reyB_Componente.draw(PANTALLA)
+                reyB_Componente.draw(PANTALLA)
+                reynaB_Componente.draw(PANTALLA)
+                reyN_Componente.draw(PANTALLA)
+                reynaN_Componente.draw(PANTALLA)
                 if boton_JvsJ.draw(PANTALLA):
                     jugador2 = True
                     ejecutandoMenu = False
@@ -268,7 +290,7 @@ Dibuja las casillas del tablero
 '''
 
 
-def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes, modoB):
+def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer, modoB):
     moveLogPantalla = p.Rect(ANCHO, 0, MOVELOGPANELANCHO, MOVELOGPANELALTO)
     p.draw.rect(pantalla, p.Color("black"), moveLogPantalla)
     moveLog = estadoJuego.registroMov
@@ -282,6 +304,39 @@ def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes, modoB):
     relleno = 5
     espacioEntre = 2
     textoY = relleno
+    mB, sB = divmod(estadoJuego.contadorBlanca, 60)
+    mN, sN = divmod(estadoJuego.contadorNegra, 60)
+    textoNegra = "Timer Negra:" + '{:02d}:{:02d}'.format(mN, sN)
+    mensajePantalla = moveLogTimer.render(textoNegra, True, p.Color("White"))
+    ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+    textoY += mensajePantalla.get_height() + espacioEntre
+    pantalla.blit(mensajePantalla, ubicacionTexto)
+
+    textoBlanca = "Timer Blanca:" + '{:02d}:{:02d}'.format(mB, sB)
+    mensajePantalla = moveLogTimer.render(textoBlanca, True, p.Color("White"))
+    ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+    textoY += mensajePantalla.get_height() + espacioEntre
+    pantalla.blit(mensajePantalla, ubicacionTexto)
+
+    if (estadoJuego.movimientoBlanca):
+        texto1 = "Turno Blanca"
+        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(MOVELOGPANELANCHO/2-50, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
+
+    else:
+        texto1 = "Turno Negra"
+        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(MOVELOGPANELANCHO/2-50, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
+    if modoB:
+        MODOBOCA = "VAMO BOQUITA"
+        mensajePantalla = moveLogFuentes.render(MODOBOCA, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
     for i in range(len(moveTexto)):
         text = moveTexto[i]
         mensajePantalla = moveLogFuentes.render(text, True, p.Color("White"))
@@ -291,24 +346,7 @@ def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes, modoB):
 
     espacioEntre = 20
 
-    if (estadoJuego.movimientoBlanca):
-        texto1 = "Turno Blanca"
-        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
-        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-        textoY += mensajePantalla.get_height() + espacioEntre
-        pantalla.blit(mensajePantalla, ubicacionTexto)
-    else:
-        texto1 = "Turno Negra"
-        mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
-        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-        textoY += mensajePantalla.get_height() + espacioEntre
-        pantalla.blit(mensajePantalla, ubicacionTexto)
-    if modoB:
-        MODOBOCA = "VAMO BOQUITA"
-        mensajePantalla = moveLogFuentes.render(MODOBOCA, True, p.Color("White"))
-        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-        textoY += mensajePantalla.get_height() + espacioEntre
-        pantalla.blit(mensajePantalla, ubicacionTexto)
+
 
 
 def dibujarTablero(pantalla, modoB=False):
@@ -348,11 +386,11 @@ Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
 
 
-def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes, modoB=False):
+def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer, modoB=False):
     # Dibuja el tablero
     dibujarTablero(pantalla, modoB)
     resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
-    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes, modoB)
+    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer, modoB)
     dibujarPiezas(pantalla, estadoJuego.tablero)
 
     # Dibujando piezas en los casilleros de los extremos
@@ -405,6 +443,18 @@ def dibujarTextos(pantalla, mensaje):
     ubicacionTexto = p.Rect(0, 0, ANCHO, ALTO).move(ANCHO / 2 - mensajePantalla.get_width() / 2,
                                                     ALTO / 2 - mensajePantalla.get_height() / 2)
     pantalla.blit(mensajePantalla, ubicacionTexto)
+
+
+def countdown(num_of_secs):
+    cantidadSecs = int(num_of_secs)
+    while cantidadSecs:
+        m, s = divmod(cantidadSecs, 60)
+        min_sec_format = '{:02d}:{:02d}'.format(m, s)
+        print(min_sec_format + '\r')
+        time.sleep(1)
+        cantidadSecs -= 1
+
+    print('Countdown finished.')
 
 
 if __name__ == "__main__":
