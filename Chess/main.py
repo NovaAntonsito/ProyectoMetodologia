@@ -7,7 +7,7 @@ from Chess import Engine, AjedezIA
 from multiprocessing import Process, Queue
 import time
 
-# Settings iniciales para PYGAME
+# Configuraciones iniciales para PYGAME
 p.init()
 jugar_img = p.image.load("imagenes/JugarBotton.png")
 salir_img = p.image.load("imagenes/SalirBotton.png")
