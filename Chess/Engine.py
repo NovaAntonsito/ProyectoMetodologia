@@ -33,7 +33,7 @@ class EstadoJuego:
         self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaMovida
         self.registroMov.append(movimiento)
         self.movimientoBlanca = not self.movimientoBlanca
-        if movimiento.piezaMovida == "bR":
+        if movimiento.piezaMovida == "nT":
             self.ubicacionReyBlanco = (movimiento.filaFinal, movimiento.columnaFinal)
         elif movimiento.piezaMovida == "nR":
             self.ubicacionReyNegro = (movimiento.filaFinal, movimiento.columnaFinal)
@@ -71,7 +71,7 @@ class EstadoJuego:
             self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaCapturada
             self.movimientoBlanca = not self.movimientoBlanca
 
-            if movimiento.piezaMovida == "bR":
+            if movimiento.piezaMovida == "nT":
                 self.ubicacionReyBlanco = (movimiento.filaInicial, movimiento.columnaInicial)
             elif movimiento.piezaMovida == "nR":
                 self.ubicacionReyNegro = (movimiento.filaInicial, movimiento.columnaInicial)
@@ -100,16 +100,17 @@ class EstadoJuego:
 
     def actualizarEnroque(self, movimiento):
         if movimiento.piezaCapturada == "bT":
-            if movimiento.columnaFinal == 0:
-                self.enroque.ReinaBlanca = False
-            elif movimiento.columnaFinal == 7:
-                self.enroque.ReyBlanco = False
+            if movimiento.filaFinal == 7:
+                if movimiento.columnaFinal == 0:
+                    self.enroque.ReinaBlanca = False
+                elif movimiento.columnaFinal == 7:
+                    self.enroque.ReyBlanco = False
         elif movimiento.piezaCapturada == "nT":
-            if movimiento.columnaFinal == 0:
-                self.enroque.ReinaNegra = False
-            elif movimiento.columnaFinal == 7:
-                self.enroque.ReyNegro = False
-
+            if movimiento.filaFinal == 0:
+                if movimiento.columnaFinal == 0:
+                    self.enroque.ReinaNegra = False
+                elif movimiento.columnaFinal == 7:
+                    self.enroque.ReyNegro = False
         if movimiento.piezaMovida == 'bR':
             self.enroque.ReinaBlanca = False
             self.enroque.ReyBlanco = False
@@ -118,15 +119,15 @@ class EstadoJuego:
             self.enroque.ReyNegro = False
         elif movimiento.piezaMovida == 'bT':
             if movimiento.filaInicial == 7:
-                if movimiento.columnaInicial == 0:  # left rook
+                if movimiento.columnaInicial == 0:
                     self.enroque.ReinaBlanca = False
-                elif movimiento.columnaInicial == 7:  # right rook
+                elif movimiento.columnaInicial == 7:
                     self.enroque.ReyBlanco = False
         elif movimiento.piezaMovida == 'nT':
             if movimiento.filaInicial == 0:
-                if movimiento.columnaInicial == 0:  # left rook
+                if movimiento.columnaInicial == 0:
                     self.enroque.ReinaNegra = False
-                elif movimiento.columnaInicial == 7:  # right rook
+                elif movimiento.columnaInicial == 7:
                     self.enroque.ReyNegro = False
 
     def traerMovimientosValidos(self):
@@ -152,7 +153,7 @@ class EstadoJuego:
                 piezaEnJaque = self.tablero[filaJaque][colJaque]
                 cuadradosValidos = []
 
-                if piezaEnJaque[1] == "C":
+                if piezaEnJaque[1] == "N":
                     cuadradosValidos = [(filaJaque, colJaque)]
                 else:
                     for i in range(1, 8):
@@ -166,7 +167,7 @@ class EstadoJuego:
                 for i in range(len(movimientos) - 1, -1,
                                -1):
                     if movimientos[i].piezaMovida[
-                        1] != "R":
+                        1] != "K":
                         if not (movimientos[i].filaFinal,
                                 movimientos[
                                     i].columnaFinal) in cuadradosValidos:
@@ -283,7 +284,7 @@ class EstadoJuego:
             columnaFinal = columnaInicial + movimiento[1]
             if 0 <= filaFinal <= 7 and 0 <= columnaFinal <= 7:
                 piezaFinal = self.tablero[filaFinal][columnaFinal]
-                if piezaFinal[0] == colorEnemigo and piezaFinal[1] == "C":
+                if piezaFinal[0] == colorEnemigo and piezaFinal[1] == "N":
                     enJaque = True
                     posiblesJaques.append((filaFinal, columnaFinal, movimiento[0], movimiento[1]))
         return enJaque, clavadas, posiblesJaques
