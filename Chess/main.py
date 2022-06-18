@@ -1,5 +1,7 @@
 # import pygame_gui
+import subprocess
 import sys
+import asyncio
 
 import pygame as p
 import Botones,RenderImagen
@@ -74,7 +76,7 @@ def main():
     # Variables para el ajedrez
     jugador1 = True
     jugador2 = False
-
+    contadorIniciado = False
     while juegoCorriendo:
         if not menu:
             PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
@@ -108,7 +110,7 @@ def main():
                     turnoHumano = (estadoJuego.movimientoBlanca and jugador1) or (not estadoJuego.movimientoBlanca and jugador2)
 
                 for e in p.event.get():
-                    if not juegoTerminado:
+                    if not juegoTerminado and contadorIniciado:
                         if e.type == p.USEREVENT:
                             if estadoJuego.movimientoBlanca:
                                 estadoJuego.contadorBlanca -= 1
@@ -193,21 +195,21 @@ def main():
 
                 # logica ia
                 if not juegoTerminado and not turnoHumano and not movimientoRehecho:
-                    if not pensamientoIa:
-                        pensamientoIa = True
-                        return_queue = Queue()
-                        encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,
-                                               args=(estadoJuego, movimientosValidos, return_queue))
-                        encontrarmov.start()
 
-                    if not encontrarmov.is_alive():
-                        movimientoIA = return_queue.get()
-                        if movimientoIA is None:
-                            movimientoIA = AjedezIA.encontrarMovimientoRandom(movimientosValidos)
-                        estadoJuego.hacerMovimiento(movimientoIA)
-                        movRealizado = True
-                        animar = True
-                        pensamientoIa = False
+                    return_queue = Queue()
+                    #encontrarmov = Process(target=AjedezIA.encontrarMejorMovimiento,
+                    #                       args=(estadoJuego, movimientosValidos, return_queue))
+                    async def encontrarmov():
+                        AjedezIA.encontrarMejorMovimiento(estadoJuego, movimientosValidos, return_queue)
+                    asyncio.run(encontrarmov())
+
+                    movimientoIA = return_queue.get()
+                    if movimientoIA is None:
+                        movimientoIA = AjedezIA.encontrarMovimientoRandom(movimientosValidos)
+                    estadoJuego.hacerMovimiento(movimientoIA)
+                    movRealizado = True
+                    animar = True
+
 
                 if movRealizado:
 
@@ -218,19 +220,19 @@ def main():
                     animar = False
                     movimientoRehecho = False
 
-                dibujarEstado(PANTALLA, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer, modoB)
+                dibujarEstado(PANTALLA, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer,contadorIniciado , modoB)
 
-                if estadoJuego.jaqueMate or estadoJuego.tablas or estadoJuego.contadorBlanca == 0 or estadoJuego.contadorNegra == 0:
+                if estadoJuego.jaqueMate or estadoJuego.tablas or (contadorIniciado and estadoJuego.contadorBlanca == 0) or (contadorIniciado and estadoJuego.contadorNegra == 0):
                     juegoTerminado = True
                     if estadoJuego.tablas:
                         mensaje = "empate"
                         dibujarTextos(PANTALLA, mensaje)
                     elif estadoJuego.jaqueMate:
                         if estadoJuego.movimientoBlanca:
-                            mensaje = "Negro gana por jaque"
+                            mensaje = "Negro gana por jaque mate"
                             dibujarTextos(PANTALLA, mensaje)
                         else:
-                            mensaje = "Blanca gana por jaque"
+                            mensaje = "Blanca gana por jaque mate"
                             dibujarTextos(PANTALLA, mensaje)
                     else:
                         if estadoJuego.movimientoBlanca:
@@ -270,10 +272,12 @@ def main():
                 if boton_JvsJ.draw(PANTALLA):
                     jugador2 = True
                     ejecutandoMenu = False
+                    contadorIniciado = True
                     menu = False
                 if boton_JvsIA.draw(PANTALLA):
                     jugador2 = False
                     ejecutandoMenu = False
+                    contadorIniciado = False
                     menu = False
                 if boton_salir.draw(PANTALLA):
                     ejecutandoMenu = False
@@ -290,7 +294,7 @@ Dibuja las casillas del tablero
 '''
 
 
-def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer, modoB):
+def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer,contadorIniciado, modoB):
     moveLogPantalla = p.Rect(ANCHO, 0, MOVELOGPANELANCHO, MOVELOGPANELALTO)
     p.draw.rect(pantalla, p.Color("black"), moveLogPantalla)
     moveLog = estadoJuego.registroMov
@@ -306,17 +310,19 @@ def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer, modoB):
     textoY = relleno
     mB, sB = divmod(estadoJuego.contadorBlanca, 60)
     mN, sN = divmod(estadoJuego.contadorNegra, 60)
-    textoNegra = "Timer Negra:" + '{:02d}:{:02d}'.format(mN, sN)
-    mensajePantalla = moveLogTimer.render(textoNegra, True, p.Color("White"))
-    ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-    textoY += mensajePantalla.get_height() + espacioEntre
-    pantalla.blit(mensajePantalla, ubicacionTexto)
 
-    textoBlanca = "Timer Blanca:" + '{:02d}:{:02d}'.format(mB, sB)
-    mensajePantalla = moveLogTimer.render(textoBlanca, True, p.Color("White"))
-    ubicacionTexto = moveLogPantalla.move(relleno, textoY)
-    textoY += mensajePantalla.get_height() + espacioEntre
-    pantalla.blit(mensajePantalla, ubicacionTexto)
+    if contadorIniciado:
+        textoNegra = "Timer Negra:" + '{:02d}:{:02d}'.format(mN, sN)
+        mensajePantalla = moveLogTimer.render(textoNegra, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
+
+        textoBlanca = "Timer Blanca:" + '{:02d}:{:02d}'.format(mB, sB)
+        mensajePantalla = moveLogTimer.render(textoBlanca, True, p.Color("White"))
+        ubicacionTexto = moveLogPantalla.move(relleno, textoY)
+        textoY += mensajePantalla.get_height() + espacioEntre
+        pantalla.blit(mensajePantalla, ubicacionTexto)
 
     if (estadoJuego.movimientoBlanca):
         texto1 = "Turno Blanca"
@@ -386,11 +392,11 @@ Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
 
 
-def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer, modoB=False):
+def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer,contadorIniciado, modoB=False):
     # Dibuja el tablero
     dibujarTablero(pantalla, modoB)
     resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
-    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer, modoB)
+    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer,contadorIniciado, modoB)
     dibujarPiezas(pantalla, estadoJuego.tablero)
 
     # Dibujando piezas en los casilleros de los extremos

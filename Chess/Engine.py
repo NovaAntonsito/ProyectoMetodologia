@@ -11,7 +11,7 @@ class EstadoJuego:
             ["bT", "bC", "bA", "bQ", "bR", "bA", "bC", "bT"]]
 
         self.movimientoBlanca = True
-        self.contadorInicial = 120
+        self.contadorInicial = 5
         self.contadorNegra = self.contadorInicial
         self.contadorBlanca = self.contadorInicial
         self.registroMov = []
