@@ -17,11 +17,17 @@ regresar_img = p.image.load("imagenes/RegresarBotton.png")
 jvsj_img = p.image.load("imagenes/JvsJBotton.png")
 jvsIA_img = p.image.load("imagenes/JvsIABotton.png")
 titulo_img = p.image.load("imagenes/TituloAjedrez.png")
+#region ImagenesParaMenu
 reynaB_img = p.image.load("imagenes/bQ.png.")
 reyB_img = p.image.load("imagenes/bR.png")
 reynaN_img = p.image.load("imagenes/nQ.png.")
 reyN_img = p.image.load("imagenes/nR.png")
 
+blancoSeleccionado = p.image.load("imagenes/BlancoSeleccionado.png")
+blancoNoSeleccionado = p.image.load("imagenes/BlancoNoSeleccionado.png")
+negroSeleccionado = p.image.load("imagenes/NegroSeleccionado.png")
+negroNoSeleccionado = p.image.load("imagenes/NegroNoSeleccionado.png")
+#endregion
 ANCHO = ALTO = 500
 MOVELOGPANELANCHO = 250
 MOVELOGPANELALTO = ALTO
@@ -33,52 +39,78 @@ p.mixer.init()
 p.mixer.music.load("Sonidos/Musica de fondo.wav")
 p.mixer.music.play(-1)
 p.mixer.music.set_volume(0.050)
-PANTALLA_MENU = (ANCHO , ALTO)
+PANTALLA_MENU = (ANCHO, ALTO)
 PANTALLA_AJEDREZ = (ANCHO + MOVELOGPANELANCHO, ALTO)
 PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
 
 
 
 
-
-def cargarImagenes():
+def cargarImagenes(colorJugador1):
     # Transformar las imagenes a una escala para el tablero
-    IMAGENES["nA"] = p.transform.scale(
-        p.image.load("imagenes/nA.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["nC"] = p.transform.scale(
-        p.image.load("imagenes/nC.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["nT"] = p.transform.scale(
-        p.image.load("imagenes/nT.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["nQ"] = p.transform.scale(
-        p.image.load("imagenes/nQ.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["nR"] = p.transform.scale(
-        p.image.load("imagenes/nR.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["nP"] = p.transform.scale(
-        p.image.load("imagenes/nP.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["bA"] = p.transform.scale(
-        p.image.load("imagenes/bA.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["bC"] = p.transform.scale(
-        p.image.load("imagenes/bC.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["bT"] = p.transform.scale(
-        p.image.load("imagenes/bT.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["bQ"] = p.transform.scale(
-        p.image.load("imagenes/bQ.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["bR"] = p.transform.scale(
-        p.image.load("imagenes/bR.png"), (SQ_SIZE, SQ_SIZE))
-    IMAGENES["bP"] = p.transform.scale(
-        p.image.load("imagenes/bP.png"), (SQ_SIZE, SQ_SIZE))
+    if colorJugador1 == "Blanco":
+        IMAGENES["nA"] = p.transform.scale(
+            p.image.load("imagenes/nA.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nC"] = p.transform.scale(
+            p.image.load("imagenes/nC.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nT"] = p.transform.scale(
+            p.image.load("imagenes/nT.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nQ"] = p.transform.scale(
+            p.image.load("imagenes/nQ.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nR"] = p.transform.scale(
+            p.image.load("imagenes/nR.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nP"] = p.transform.scale(
+            p.image.load("imagenes/nP.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bA"] = p.transform.scale(
+            p.image.load("imagenes/bA.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bC"] = p.transform.scale(
+            p.image.load("imagenes/bC.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bT"] = p.transform.scale(
+            p.image.load("imagenes/bT.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bQ"] = p.transform.scale(
+            p.image.load("imagenes/bQ.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bR"] = p.transform.scale(
+            p.image.load("imagenes/bR.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bP"] = p.transform.scale(
+            p.image.load("imagenes/bP.png"), (SQ_SIZE, SQ_SIZE))
+    else:
+        IMAGENES["bA"] = p.transform.scale(
+            p.image.load("imagenes/nA.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bC"] = p.transform.scale(
+            p.image.load("imagenes/nC.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bT"] = p.transform.scale(
+            p.image.load("imagenes/nT.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bQ"] = p.transform.scale(
+            p.image.load("imagenes/nQ.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bR"] = p.transform.scale(
+            p.image.load("imagenes/nR.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["bP"] = p.transform.scale(
+            p.image.load("imagenes/nP.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nA"] = p.transform.scale(
+            p.image.load("imagenes/bA.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nC"] = p.transform.scale(
+            p.image.load("imagenes/bC.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nT"] = p.transform.scale(
+            p.image.load("imagenes/bT.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nQ"] = p.transform.scale(
+            p.image.load("imagenes/bQ.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nR"] = p.transform.scale(
+            p.image.load("imagenes/bR.png"), (SQ_SIZE, SQ_SIZE))
+        IMAGENES["nP"] = p.transform.scale(
+            p.image.load("imagenes/bP.png"), (SQ_SIZE, SQ_SIZE))
 
 
 def main():
     p.init()
+    colorJugador1 = "Blanco"
     juegoCorriendo = True
-    menu = True
+    ventanaAbierta = "Menu"
     # Variables para el ajedrez
     jugador1 = True
     jugador2 = False
     contadorIniciado = False
     while juegoCorriendo:
-        if not menu:
+        if ventanaAbierta == "Juego":
             PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
 
             BG = p.transform.scale(p.image.load("imagenes/fondo.png"), (SQ_SIZE, SQ_SIZE))
@@ -99,7 +131,7 @@ def main():
             encontrarmov = None
             logo = p.image.load("imagenes/logo.png")
             p.display.set_icon(logo)
-            cargarImagenes()
+            cargarImagenes(colorJugador1)
             ejecutando = True
             posicionAnterior = ()
             clicksJugador = []
@@ -245,23 +277,24 @@ def main():
                 p.display.flip()
 
                 p.display.update()
-        else:
-            print("Menu")
+        elif ventanaAbierta == "Menu":
             PANTALLA = p.display.set_mode(PANTALLA_MENU)
-            print(PANTALLA.get_width())
             PANTALLA.fill(p.Color("Orange"))
             ejecutandoMenu = True
+
+            #region CosasMenu
             tituloComponente = RenderImagen.imagen((PANTALLA.get_width()/2)-(titulo_img.get_width()*4)/2, 20, titulo_img, 4)
             reyB_Componente = RenderImagen.imagen(0,PANTALLA.get_height()-reyB_img.get_height(),reyB_img,1)
             reynaB_Componente = RenderImagen.imagen(PANTALLA.get_width()-reynaB_img.get_width(),0,reynaB_img,1)
             reyN_Componente = RenderImagen.imagen(PANTALLA.get_width()-reyN_img.get_width(),PANTALLA.get_height()-reyN_img.get_height(),reyN_img,1)
             reynaN_Componente = RenderImagen.imagen(0,0,reynaN_img,1)
 
-
             boton_salir = Botones.boton((PANTALLA.get_width()/2)-(salir_img.get_width()), 250, salir_img, 2)
-
             boton_JvsIA = Botones.boton(20, 150, jvsIA_img, 2)
             boton_JvsJ = Botones.boton(PANTALLA.get_width()-(jvsj_img.get_width()*2)-20, 150, jvsj_img, 2)
+
+            #endregion
+
             while ejecutandoMenu:
                 tituloComponente.draw(PANTALLA)
                 reyB_Componente.draw(PANTALLA)
@@ -269,17 +302,17 @@ def main():
                 reynaB_Componente.draw(PANTALLA)
                 reyN_Componente.draw(PANTALLA)
                 reynaN_Componente.draw(PANTALLA)
-                if boton_JvsJ.draw(PANTALLA):
+                if boton_JvsJ.mostrarEnPantalla(PANTALLA):
                     jugador2 = True
                     ejecutandoMenu = False
                     contadorIniciado = True
-                    menu = False
-                if boton_JvsIA.draw(PANTALLA):
+                    ventanaAbierta = "ModoDeJuego"
+                if boton_JvsIA.mostrarEnPantalla(PANTALLA):
                     jugador2 = False
                     ejecutandoMenu = False
                     contadorIniciado = False
-                    menu = False
-                if boton_salir.draw(PANTALLA):
+                    ventanaAbierta = "ModoDeJuego"
+                if boton_salir.mostrarEnPantalla(PANTALLA):
                     ejecutandoMenu = False
                     juegoCorriendo = False
                 for e in p.event.get():
@@ -287,6 +320,56 @@ def main():
                         ejecutandoMenu = False
                         juegoCorriendo = False
                 p.display.update()
+        elif ventanaAbierta == "ModoDeJuego":
+            PANTALLA = p.display.set_mode(PANTALLA_MENU)
+            PANTALLA.fill(p.Color("Orange"))
+            ejecutandoMenu = True
+
+            #region CosasMenu
+            tituloComponente = RenderImagen.imagen((PANTALLA.get_width()/2)-(titulo_img.get_width()*4)/2, 20, titulo_img, 4)
+            reyB_Componente = RenderImagen.imagen(0, PANTALLA.get_height() - reyB_img.get_height(), reyB_img, 1)
+            reynaB_Componente = RenderImagen.imagen(PANTALLA.get_width() - reynaB_img.get_width(), 0, reynaB_img, 1)
+            reyN_Componente = RenderImagen.imagen(PANTALLA.get_width() - reyN_img.get_width(), PANTALLA.get_height() - reyN_img.get_height(), reyN_img, 1)
+            reynaN_Componente = RenderImagen.imagen(0, 0, reynaN_img, 1)
+
+            boton_salir = Botones.boton(PANTALLA.get_width()-(salir_img.get_width() * 7), 400, salir_img, 2)
+            boton_jugar = Botones.boton(PANTALLA.get_width()-(jugar_img.get_width() * 3), 400, jugar_img, 2)
+
+
+            botonElegirColorBlanco = Botones.boton(PANTALLA.get_width()-(blancoSeleccionado.get_width() *1.8),200,blancoSeleccionado,1.5)
+            botonElegirColorNegro = Botones.boton(PANTALLA.get_width()-(negroNoSeleccionado.get_width() * 4.3),200,negroNoSeleccionado,1.5)
+            #endregion
+
+            colorElegido = ""
+            while ejecutandoMenu:
+                reyB_Componente.draw(PANTALLA)
+                reyB_Componente.draw(PANTALLA)
+                reynaB_Componente.draw(PANTALLA)
+                reyN_Componente.draw(PANTALLA)
+                reynaN_Componente.draw(PANTALLA)
+                tituloComponente.draw(PANTALLA)
+                if botonElegirColorBlanco.mostrarEnPantalla(PANTALLA):
+                    colorElegido = "Blanco"
+                    botonElegirColorBlanco.cambiarImagen(blancoSeleccionado)
+                    botonElegirColorNegro.cambiarImagen(negroNoSeleccionado)
+                if botonElegirColorNegro.mostrarEnPantalla(PANTALLA):
+                    colorElegido = "Negro"
+                    botonElegirColorBlanco.cambiarImagen(blancoNoSeleccionado)
+                    botonElegirColorNegro.cambiarImagen(negroSeleccionado)
+
+                if boton_jugar.mostrarEnPantalla(PANTALLA):
+                    colorJugador1 = colorElegido
+                    ejecutandoMenu = False
+                    ventanaAbierta = "Juego"
+                if boton_salir.mostrarEnPantalla(PANTALLA):
+                    ejecutandoMenu = False
+                    juegoCorriendo = False
+                for e in p.event.get():
+                    if e.type == p.QUIT:
+                        ejecutandoMenu = False
+                        juegoCorriendo = False
+                p.display.update()
+
 
 
 '''
