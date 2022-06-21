@@ -27,6 +27,19 @@ blancoSeleccionado = p.image.load("imagenes/BlancoSeleccionado.png")
 blancoNoSeleccionado = p.image.load("imagenes/BlancoNoSeleccionado.png")
 negroSeleccionado = p.image.load("imagenes/NegroSeleccionado.png")
 negroNoSeleccionado = p.image.load("imagenes/NegroNoSeleccionado.png")
+
+
+infinitoImgSeleccionado = p.image.load("imagenes/InfinitoBottonSeleccionado.png")
+infinitoImgNoSeleccionado = p.image.load("imagenes/InfinitoBottonNoSeleccionado.png")
+
+balaImgSeleccionado = p.image.load("imagenes/BalaBottonSeleccionado.png")
+balaImgNoSeleccionado = p.image.load("imagenes/BalaBottonNoSeleccionado.png")
+
+blitzSeleccionado = p.image.load("imagenes/BlitzBottonSeleccionado.png")
+blitzNoSeleccionado = p.image.load("imagenes/BlitzBottonNoSeleccionado.png")
+
+rapidoSeleccionado = p.image.load("imagenes/RapidoBottonSeleccionado.png")
+rapidoNoSeleccionado = p.image.load("imagenes/RapidoBottonNoSeleccionado.png")
 #endregion
 ANCHO = ALTO = 500
 MOVELOGPANELANCHO = 250
@@ -103,6 +116,7 @@ def cargarImagenes(colorJugador1):
 def main():
     p.init()
     colorJugador1 = "Blanco"
+    modoDeJuego= "SinTiempo"
     juegoCorriendo = True
     ventanaAbierta = "Menu"
     # Variables para el ajedrez
@@ -261,17 +275,18 @@ def main():
                         dibujarTextos(PANTALLA, mensaje)
                     elif estadoJuego.jaqueMate:
                         if estadoJuego.movimientoBlanca:
-                            mensaje = "Negro gana por jaque mate"
+
+                            mensaje = "Negro gana por jaque mate" if colorJugador1 == "Blanco" else "Blanco gana por jaque mate"
                             dibujarTextos(PANTALLA, mensaje)
                         else:
-                            mensaje = "Blanca gana por jaque mate"
+                            mensaje = "Blanca gana por jaque mate" if colorJugador1 == "Blanco" else "Negro gana por jaque mate"
                             dibujarTextos(PANTALLA, mensaje)
                     else:
                         if estadoJuego.movimientoBlanca:
-                            mensaje = "Negro gana por tiempo"
+                            mensaje = "Negro gana por tiempo" if colorJugador1 == "Blanco" else "Blanco gana por tiempo"
                             dibujarTextos(PANTALLA, mensaje)
                         else:
-                            mensaje = "Blanca gana por tiempo"
+                            mensaje = "Blanca gana por tiempo" if colorJugador1 == "Blanco" else "Negro gana por tiempo"
                             dibujarTextos(PANTALLA, mensaje)
                 reloj.tick(MAX_FPS)
                 p.display.flip()
@@ -305,7 +320,6 @@ def main():
                 if boton_JvsJ.mostrarEnPantalla(PANTALLA):
                     jugador2 = True
                     ejecutandoMenu = False
-                    contadorIniciado = True
                     ventanaAbierta = "ModoDeJuego"
                 if boton_JvsIA.mostrarEnPantalla(PANTALLA):
                     jugador2 = False
@@ -335,12 +349,18 @@ def main():
             boton_salir = Botones.boton(PANTALLA.get_width()-(salir_img.get_width() * 7), 400, salir_img, 2)
             boton_jugar = Botones.boton(PANTALLA.get_width()-(jugar_img.get_width() * 3), 400, jugar_img, 2)
 
+            boton_infinito = Botones.boton(100, 150, infinitoImgSeleccionado, 1.5)
+            boton_blitz = Botones.boton(100, 200, blitzNoSeleccionado, 1.5)
+            boton_bala = Botones.boton(100, 250, balaImgNoSeleccionado, 1.5)
+            boton_rapido = Botones.boton(100, 300, rapidoNoSeleccionado, 1.5)
 
-            botonElegirColorBlanco = Botones.boton(PANTALLA.get_width()-(blancoSeleccionado.get_width() *1.8),200,blancoSeleccionado,1.5)
-            botonElegirColorNegro = Botones.boton(PANTALLA.get_width()-(negroNoSeleccionado.get_width() * 4.3),200,negroNoSeleccionado,1.5)
+
+            botonElegirColorBlanco = Botones.boton(PANTALLA.get_width()-(blancoSeleccionado.get_width()*1.5),150,blancoSeleccionado,1.5)
+            botonElegirColorNegro = Botones.boton(PANTALLA.get_width()-(negroNoSeleccionado.get_width()*1.5),200,negroNoSeleccionado,1.5)
             #endregion
 
             colorElegido = ""
+            modoDeJuegoElegido = ""
             while ejecutandoMenu:
                 reyB_Componente.draw(PANTALLA)
                 reyB_Componente.draw(PANTALLA)
@@ -357,10 +377,37 @@ def main():
                     botonElegirColorBlanco.cambiarImagen(blancoNoSeleccionado)
                     botonElegirColorNegro.cambiarImagen(negroSeleccionado)
 
+                if boton_infinito.mostrarEnPantalla(PANTALLA):
+                    modoDeJuegoElegido = "SinTiempo"
+                    boton_infinito.cambiarImagen(infinitoImgSeleccionado)
+                    boton_blitz.cambiarImagen(blitzNoSeleccionado)
+                    boton_bala.cambiarImagen(balaImgNoSeleccionado)
+                    boton_rapido.cambiarImagen(rapidoNoSeleccionado)
+                elif boton_blitz.mostrarEnPantalla(PANTALLA):
+                    modoDeJuegoElegido = "Blitz"
+                    boton_infinito.cambiarImagen(infinitoImgNoSeleccionado)
+                    boton_blitz.cambiarImagen(blitzSeleccionado)
+                    boton_bala.cambiarImagen(balaImgNoSeleccionado)
+                    boton_rapido.cambiarImagen(rapidoNoSeleccionado)
+                elif boton_bala.mostrarEnPantalla(PANTALLA):
+                    modoDeJuegoElegido = "Bala"
+                    boton_infinito.cambiarImagen(infinitoImgNoSeleccionado)
+                    boton_blitz.cambiarImagen(blitzNoSeleccionado)
+                    boton_bala.cambiarImagen(balaImgSeleccionado)
+                    boton_rapido.cambiarImagen(rapidoNoSeleccionado)
+                elif boton_rapido.mostrarEnPantalla(PANTALLA):
+                    modoDeJuegoElegido = "Rapido"
+                    boton_infinito.cambiarImagen(infinitoImgNoSeleccionado)
+                    boton_blitz.cambiarImagen(blitzNoSeleccionado)
+                    boton_bala.cambiarImagen(balaImgNoSeleccionado)
+                    boton_rapido.cambiarImagen(rapidoSeleccionado)
+
                 if boton_jugar.mostrarEnPantalla(PANTALLA):
                     colorJugador1 = colorElegido
+                    modoDeJuego = modoDeJuegoElegido
                     ejecutandoMenu = False
                     ventanaAbierta = "Juego"
+                    print(modoDeJuego)
                 if boton_salir.mostrarEnPantalla(PANTALLA):
                     ejecutandoMenu = False
                     juegoCorriendo = False
@@ -491,6 +538,7 @@ def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, m
 def resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior):
     if posicionAnterior != ():
         f, c = posicionAnterior
+
         if estadoJuego.tablero[f][c][0] == ('b' if estadoJuego.movimientoBlanca else 'n'):
             s = p.Surface((SQ_SIZE, SQ_SIZE))
             s.set_alpha(128)
@@ -527,10 +575,11 @@ def animacionPiezas(mover, pantalla, tablero, reloj, modoB=False):
 
 
 def dibujarTextos(pantalla, mensaje):
-    fuente = p.font.SysFont("Helvitca", 32, True, False)
-    mensajePantalla = fuente.render(mensaje, 0, p.Color("Gray"))
+    fuente = p.font.SysFont("Helvitca", 35, True, False)
+    mensajePantalla = fuente.render(mensaje, 0, p.Color("White"))
     ubicacionTexto = p.Rect(0, 0, ANCHO, ALTO).move(ANCHO / 2 - mensajePantalla.get_width() / 2,
-                                                    ALTO / 2 - mensajePantalla.get_height() / 2)
+                                                    ALTO / 2 - mensajePantalla.get_height() / 2 + 10)
+    p.draw.rect(pantalla, p.Color("Black"), p.Rect(ANCHO / 2 - mensajePantalla.get_width() / 2, ALTO / 2 - mensajePantalla.get_height() / 2 + 10, mensajePantalla.get_width(), mensajePantalla.get_height()), 0)
     pantalla.blit(mensajePantalla, ubicacionTexto)
 
 

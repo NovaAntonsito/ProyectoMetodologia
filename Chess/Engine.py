@@ -1,4 +1,5 @@
 class EstadoJuego:
+
     def __init__(self):
         self.tablero = [
             ["nT", "nC", "nA", "nQ", "nR", "nA", "nC", "nT"],
@@ -27,7 +28,10 @@ class EstadoJuego:
         self.enroque = Enroque(True, True, True, True)
         self.registroEnroques = [Enroque(self.enroque.ReyBlanco, self.enroque.ReyNegro,
                                          self.enroque.ReinaBlanca, self.enroque.ReinaNegra)]
-
+    def definirTiempoInicial(self,tiempo):
+        self.contadorInicial = tiempo
+        self.contadorNegra = self.contadorInicial
+        self.contadorBlanca = self.contadorInicial
     def hacerMovimiento(self, movimiento):
         self.tablero[movimiento.filaInicial][movimiento.columnaInicial] = "--"
         self.tablero[movimiento.filaFinal][movimiento.columnaFinal] = movimiento.piezaMovida
