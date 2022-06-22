@@ -113,17 +113,18 @@ def cargarImagenes(colorJugador1):
         IMAGENES["nP"] = p.transform.scale(
             p.image.load("imagenes/bP.png"), (SQ_SIZE, SQ_SIZE))
 
-
 def main():
     p.init()
     colorJugador1 = "Blanco"
-    modoJVJ=False
     juegoCorriendo = True
     ventanaAbierta = "Menu"
+    modoDeJuego = 'SinTiempo'
+    MODOJVJ = False
     # Variables para el ajedrez
     jugador1 = True
     jugador2 = False
     contadorIniciado = False
+
     while juegoCorriendo:
         if ventanaAbierta == "Juego":
             PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
@@ -141,7 +142,6 @@ def main():
             moveLogFuentes = p.font.SysFont("Console", 15, False, False)
             moveLogTimer = p.font.SysFont("Console", 20, True, False)
             modoB = False
-
             pensamientoIa = False
             movimientoRehecho = False
             encontrarmov = None
@@ -152,6 +152,20 @@ def main():
             posicionAnterior = ()
             clicksJugador = []
             p.time.set_timer(p.USEREVENT, 1000)
+
+            if modoDeJuego == "SinTiempo":
+                estadoJuego.definirTiempoInicial(0)
+                contadorIniciado = False
+            if modoDeJuego == "Blitz":
+                estadoJuego.definirTiempoInicial(180)
+                contadorIniciado = True
+
+            if modoDeJuego == "Bala":
+                estadoJuego.definirTiempoInicial(60)
+                contadorIniciado = True
+            if modoDeJuego == "Rapido":
+                estadoJuego.definirTiempoInicial(600)
+                contadorIniciado = True
 
             while ejecutando:
                 if not juegoTerminado:
@@ -173,11 +187,6 @@ def main():
                         p.quit()
                         sys.exit()
                     elif e.type == p.MOUSEBUTTONDOWN:
-                        if not juegoTerminado:
-                            '''if e.type == p.QUIT:
-                                ejecutando = False
-                                juegoCorriendo = False
-                               '''
                             if not juegoTerminado and turnoHumano:
                                 posicion = p.mouse.get_pos()  # posicion (x,y)
                                 col = posicion[0] // SQ_SIZE
@@ -268,7 +277,7 @@ def main():
                     animar = False
                     movimientoRehecho = False
 
-                dibujarEstado(PANTALLA, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer,contadorIniciado , modoB)
+                dibujarEstado(PANTALLA, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer,contadorIniciado,MODOJVJ, modoB)
 
                 if estadoJuego.jaqueMate or estadoJuego.tablas or (contadorIniciado and estadoJuego.contadorBlanca == 0) or (contadorIniciado and estadoJuego.contadorNegra == 0):
                     juegoTerminado = True
@@ -319,12 +328,12 @@ def main():
                 reyN_Componente.draw(PANTALLA)
                 reynaN_Componente.draw(PANTALLA)
                 if boton_JvsJ.mostrarEnPantalla(PANTALLA):
-                    modoJVJ=True
+                    MODOJVJ=True
                     jugador2 = True
                     ejecutandoMenu = False
                     ventanaAbierta = "ModoDeJuego"
                 if boton_JvsIA.mostrarEnPantalla(PANTALLA):
-
+                    MODOJVJ = False
                     ejecutandoMenu = False
 
                     ventanaAbierta = "ModoDeJuego"
@@ -364,7 +373,7 @@ def main():
             colorElegido = "Blanco"
             modoDeJuegoElegido = "SinTiempo"
 
-            if not modoJVJ:
+            if not MODOJVJ:
                 jugador2 = True
                 jugador1 = False
             while ejecutandoMenu:
@@ -377,7 +386,7 @@ def main():
 
                 if botonElegirColorBlanco.mostrarEnPantalla(PANTALLA):
                     colorElegido = "Blanco"
-                    if not modoJVJ:
+                    if not MODOJVJ:
                         jugador2=True
                         jugador1=False
                     botonElegirColorBlanco.cambiarImagen(blancoSeleccionado)
@@ -385,7 +394,7 @@ def main():
 
                 if botonElegirColorNegro.mostrarEnPantalla(PANTALLA):
                     colorElegido = "Negro"
-                    if not modoJVJ:
+                    if not MODOJVJ:
                         jugador2 = False
                         jugador1 = True
                     botonElegirColorBlanco.cambiarImagen(blancoNoSeleccionado)
@@ -421,7 +430,7 @@ def main():
                     boton_rapido.cambiarImagen(rapidoSeleccionado)
 
                 if boton_jugar.mostrarEnPantalla(PANTALLA):
-                    if modoJVJ:
+                    if MODOJVJ:
                         colorJugador1 = colorElegido
                     modoDeJuego = modoDeJuegoElegido
                     ejecutandoMenu = False
@@ -443,7 +452,7 @@ Dibuja las casillas del tablero
 '''
 
 
-def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer,contadorIniciado, modoB):
+def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer,contadorIniciado,colorJugador1,MODOJVJ, modoB):
     moveLogPantalla = p.Rect(ANCHO, 0, MOVELOGPANELANCHO, MOVELOGPANELALTO)
     p.draw.rect(pantalla, p.Color("black"), moveLogPantalla)
     moveLog = estadoJuego.registroMov
@@ -474,14 +483,22 @@ def dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer,contadorIn
         pantalla.blit(mensajePantalla, ubicacionTexto)
 
     if (estadoJuego.movimientoBlanca):
-        texto1 = "Turno Blanca"
+        if MODOJVJ:
+            print('entreBlanca')
+            texto1 = "Turno Blanca" if colorJugador1 == 'Blanca' else 'Turno Negra'
+        else:
+            texto1 = "Turno Blanca"
         mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
         ubicacionTexto = moveLogPantalla.move(MOVELOGPANELANCHO/2-50, textoY)
         textoY += mensajePantalla.get_height() + espacioEntre
         pantalla.blit(mensajePantalla, ubicacionTexto)
 
     else:
-        texto1 = "Turno Negra"
+        if MODOJVJ:
+            print('entreNegra')
+            texto1 = "Turno Negra" if colorJugador1 == 'Blanca' else 'Turno Blanca'
+        else:
+            texto1 = "Turno Negra"
         mensajePantalla = moveLogFuentes.render(texto1, True, p.Color("White"))
         ubicacionTexto = moveLogPantalla.move(MOVELOGPANELANCHO/2-50, textoY)
         textoY += mensajePantalla.get_height() + espacioEntre
@@ -541,11 +558,11 @@ Responsable de todos los graficos que estan dentro del estado de juego actual
 '''
 
 
-def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer,contadorIniciado, modoB=False):
+def dibujarEstado(pantalla, estadoJuego, movimientosValidos, posicionAnterior, moveLogFuentes,moveLogTimer,contadorIniciado,colorJugador1,MODOJVJ, modoB=False):
     # Dibuja el tablero
     dibujarTablero(pantalla, modoB)
     resaltarMovimientos(pantalla, estadoJuego, movimientosValidos, posicionAnterior)
-    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer,contadorIniciado, modoB)
+    dibujarMoveLog(pantalla, estadoJuego, moveLogFuentes,moveLogTimer,contadorIniciado,colorJugador1,MODOJVJ, modoB)
     dibujarPiezas(pantalla, estadoJuego.tablero)
 
     # Dibujando piezas en los casilleros de los extremos
@@ -590,7 +607,7 @@ def animacionPiezas(mover, pantalla, tablero, reloj, modoB=False):
         if mover.piezaMovida != '--':
             pantalla.blit(IMAGENES[mover.piezaMovida], p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE))
         p.display.flip()
-        reloj.tick(60)
+        reloj.tick(80)
 
 
 def dibujarTextos(pantalla, mensaje):
