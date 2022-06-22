@@ -191,7 +191,7 @@ def main():
                                 posicion = p.mouse.get_pos()  # posicion (x,y)
                                 col = posicion[0] // SQ_SIZE
                                 fil = posicion[1] // SQ_SIZE
-                                if posicionAnterior == (fil, col):
+                                if posicionAnterior == (fil, col) or col >= 8:
                                     posicionAnterior = ()
                                     clicksJugador = []
                                 else:
