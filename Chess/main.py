@@ -60,6 +60,7 @@ PANTALLA = p.display.set_mode(PANTALLA_AJEDREZ)
 
 
 def cargarImagenes(colorJugador1):
+
     # Transformar las imagenes a una escala para el tablero
     if colorJugador1 == "Blanco":
         IMAGENES["nA"] = p.transform.scale(
@@ -116,7 +117,7 @@ def cargarImagenes(colorJugador1):
 def main():
     p.init()
     colorJugador1 = "Blanco"
-    modoDeJuego= "SinTiempo"
+    modoJVJ=False
     juegoCorriendo = True
     ventanaAbierta = "Menu"
     # Variables para el ajedrez
@@ -131,6 +132,7 @@ def main():
             reloj = p.time.Clock()
             PANTALLA.fill(p.Color(255, 255, 255))
             estadoJuego = Engine.EstadoJuego()
+            movimientoBlanca = estadoJuego.movimientoBlanca
             movimientosValidos = estadoJuego.traerMovimientosValidos()
             movRealizado = False
             animar = False
@@ -153,7 +155,7 @@ def main():
 
             while ejecutando:
                 if not juegoTerminado:
-                    turnoHumano = (estadoJuego.movimientoBlanca and jugador1) or (not estadoJuego.movimientoBlanca and jugador2)
+                    turnoHumano = (not estadoJuego.movimientoBlanca and jugador1) or (estadoJuego.movimientoBlanca and jugador2)
 
                 for e in p.event.get():
                     if not juegoTerminado and contadorIniciado:
@@ -275,7 +277,6 @@ def main():
                         dibujarTextos(PANTALLA, mensaje)
                     elif estadoJuego.jaqueMate:
                         if estadoJuego.movimientoBlanca:
-
                             mensaje = "Negro gana por jaque mate" if colorJugador1 == "Blanco" else "Blanco gana por jaque mate"
                             dibujarTextos(PANTALLA, mensaje)
                         else:
@@ -318,13 +319,14 @@ def main():
                 reyN_Componente.draw(PANTALLA)
                 reynaN_Componente.draw(PANTALLA)
                 if boton_JvsJ.mostrarEnPantalla(PANTALLA):
+                    modoJVJ=True
                     jugador2 = True
                     ejecutandoMenu = False
                     ventanaAbierta = "ModoDeJuego"
                 if boton_JvsIA.mostrarEnPantalla(PANTALLA):
-                    jugador2 = False
+
                     ejecutandoMenu = False
-                    contadorIniciado = False
+
                     ventanaAbierta = "ModoDeJuego"
                 if boton_salir.mostrarEnPantalla(PANTALLA):
                     ejecutandoMenu = False
@@ -359,8 +361,12 @@ def main():
             botonElegirColorNegro = Botones.boton(PANTALLA.get_width()-(negroNoSeleccionado.get_width()*1.5),200,negroNoSeleccionado,1.5)
             #endregion
 
-            colorElegido = ""
-            modoDeJuegoElegido = ""
+            colorElegido = "Blanco"
+            modoDeJuegoElegido = "SinTiempo"
+
+            if not modoJVJ:
+                jugador2 = True
+                jugador1 = False
             while ejecutandoMenu:
                 reyB_Componente.draw(PANTALLA)
                 reyB_Componente.draw(PANTALLA)
@@ -368,34 +374,46 @@ def main():
                 reyN_Componente.draw(PANTALLA)
                 reynaN_Componente.draw(PANTALLA)
                 tituloComponente.draw(PANTALLA)
+
                 if botonElegirColorBlanco.mostrarEnPantalla(PANTALLA):
                     colorElegido = "Blanco"
+                    if not modoJVJ:
+                        jugador2=True
+                        jugador1=False
                     botonElegirColorBlanco.cambiarImagen(blancoSeleccionado)
                     botonElegirColorNegro.cambiarImagen(negroNoSeleccionado)
+
                 if botonElegirColorNegro.mostrarEnPantalla(PANTALLA):
                     colorElegido = "Negro"
+                    if not modoJVJ:
+                        jugador2 = False
+                        jugador1 = True
                     botonElegirColorBlanco.cambiarImagen(blancoNoSeleccionado)
                     botonElegirColorNegro.cambiarImagen(negroSeleccionado)
 
                 if boton_infinito.mostrarEnPantalla(PANTALLA):
+                    contadorIniciado=False
                     modoDeJuegoElegido = "SinTiempo"
                     boton_infinito.cambiarImagen(infinitoImgSeleccionado)
                     boton_blitz.cambiarImagen(blitzNoSeleccionado)
                     boton_bala.cambiarImagen(balaImgNoSeleccionado)
                     boton_rapido.cambiarImagen(rapidoNoSeleccionado)
                 elif boton_blitz.mostrarEnPantalla(PANTALLA):
+                    contadorIniciado = True
                     modoDeJuegoElegido = "Blitz"
                     boton_infinito.cambiarImagen(infinitoImgNoSeleccionado)
                     boton_blitz.cambiarImagen(blitzSeleccionado)
                     boton_bala.cambiarImagen(balaImgNoSeleccionado)
                     boton_rapido.cambiarImagen(rapidoNoSeleccionado)
                 elif boton_bala.mostrarEnPantalla(PANTALLA):
+                    contadorIniciado = True
                     modoDeJuegoElegido = "Bala"
                     boton_infinito.cambiarImagen(infinitoImgNoSeleccionado)
                     boton_blitz.cambiarImagen(blitzNoSeleccionado)
                     boton_bala.cambiarImagen(balaImgSeleccionado)
                     boton_rapido.cambiarImagen(rapidoNoSeleccionado)
                 elif boton_rapido.mostrarEnPantalla(PANTALLA):
+                    contadorIniciado = True
                     modoDeJuegoElegido = "Rapido"
                     boton_infinito.cambiarImagen(infinitoImgNoSeleccionado)
                     boton_blitz.cambiarImagen(blitzNoSeleccionado)
@@ -403,7 +421,8 @@ def main():
                     boton_rapido.cambiarImagen(rapidoSeleccionado)
 
                 if boton_jugar.mostrarEnPantalla(PANTALLA):
-                    colorJugador1 = colorElegido
+                    if modoJVJ:
+                        colorJugador1 = colorElegido
                     modoDeJuego = modoDeJuegoElegido
                     ejecutandoMenu = False
                     ventanaAbierta = "Juego"
